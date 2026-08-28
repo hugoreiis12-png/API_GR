@@ -6,19 +6,12 @@ ENV TZ=America/Sao_Paulo \
     NODE_ENV=production
 WORKDIR /app
 
-# supercronic: executor de crontab feito para containers. Roda os jobs com o
-# ambiente do container (herda as env vars) e loga em stdout -> ideal p/ Portainer.
-ARG SUPERCRONIC_VERSION=v0.2.33
-RUN curl -fsSL -o /usr/local/bin/supercronic \
-      "https://github.com/aptible/supercronic/releases/download/${SUPERCRONIC_VERSION}/supercronic-linux-amd64" \
-    && chmod +x /usr/local/bin/supercronic
-
 # Instala dependencias (os browsers ja vem na imagem base).
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund
 
-# Codigo da aplicacao + crontab.
-COPY fuzzing.js sync-api.js crontab ./
+# Codigo da aplicacao.
+COPY fuzzing.js sync-api.js scheduler.js ./
 
-# Sobe o supercronic lendo o crontab; ele dispara o fuzzing.js no horario agendado.
-CMD ["supercronic", "/app/crontab"]
+# Agendador em Node puro (sem binario externo): dispara o fuzzing.js no horario.
+CMD ["node", "/app/scheduler.js"]

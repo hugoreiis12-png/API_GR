@@ -15,3 +15,9 @@ services:
       # Janela de datas (opcional): vazio = hoje; dias somados ao inicio.
       # RANGE_START: ""
       RANGE_DAYS: "6"
+      # Horario do agendamento (default 11:57). seg-sex fixo no scheduler.js.
+      CRON_HOUR: "11"
+      CRON_MINUTE: "57"
+      # RUN_ON_START=1 roda UMA vez assim que o container sobe (util p/ testar).
+      # Deixe comentado em producao para nao disparar fora do horario.
+      # RUN_ON_START: "1"
