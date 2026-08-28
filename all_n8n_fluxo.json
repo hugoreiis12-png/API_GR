@@ -1,0 +1,1813 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/login",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json, text/plain, */*"
+            },
+            {
+              "name": "Origin",
+              "value": "https://ecommerce.grsa.com.br"
+            },
+            {
+              "name": "Referer",
+              "value": "https://ecommerce.grsa.com.br/"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0"
+            },
+            {
+              "name": "User-Id",
+              "value": "jf3t6vglg1k"
+            },
+            {
+              "name": "Cookie",
+              "value": "__goc_session__=xkcoavhxksbeduomdfbvdjprksswqmip"
+            },
+            {
+              "name": "cookie",
+              "value": "__goc_session__=xkcoavhxksbeduomdfbvdjprksswqmip;"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"requestType\": \"Row\",\n  \"row\": {\n    \"USER_EMAIL\": \"william.silva@grupocampanha.com.br\",\n    \"PASSWORD\": \"1234567890\",\n    \"PRODUCT_ID\": 1694,\n    \"REQUESTER_URL\": \"https://ecommerce.grsa.com.br/#/product#Login\",\n    \"ATTEMPTS\": 1,\n    \"SHOW_FULL_OPERATOR\": false,\n    \"LOGIN_LANGUAGE\": \"pt_br\"\n  },\n  \"origin\": {\n    \"containerLabel\": \"Login\",\n    \"widgetLabel\": \"Login\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -432,
+        -288
+      ],
+      "id": "5ec2bc07-ed40-490a-a0c6-b44a8cb34527",
+      "name": "LOGIN SITE GR",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "filePath": "/data/af_full_dump.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -512
+      ],
+      "id": "99c05802-783f-4303-a221-868c5bf8d019",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n// n8n coloca o corpo do POST em json.body (fallback para json direto)\nconst body = item?.json?.body ?? item?.json ?? {};\n// o dump completo vem em body.data (fallback: o proprio body)\nconst dump = body?.data ?? body;\nconst rows = Array.isArray(dump?.afsCompletas) ? dump.afsCompletas : [];\n\nif (!rows.length) {\n  return [];\n}\n\nreturn rows.map(row => ({ json: row }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        -400
+      ],
+      "id": "bd4acc37-6588-4c6a-921d-bc00628d470f",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/crud/autoForne",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "sec-ch-ua-platform",
+              "value": "\"Android\""
+            },
+            {
+              "name": "Referer",
+              "value": "https://ecommerce.grsa.com.br/"
+            },
+            {
+              "name": "sec-ch-ua",
+              "value": "\"Google Chrome\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\""
+            },
+            {
+              "name": "OAuth-KeepConnected",
+              "value": "null"
+            },
+            {
+              "name": "sec-ch-ua-mobile",
+              "value": "?1"
+            },
+            {
+              "name": "OAuth-Token",
+              "value": "={{ $json.dataset.request.TOKEN }}"
+            },
+            {
+              "name": "User-Id",
+              "value": "jf3t6vglg1k"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/plain, */*"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"disableLoader\": false,\n  \"filter\": [\n    {\n      \"name\": \"P_CDFORNECED\",\n      \"operator\": \"=\",\n      \"value\": \"J15268427000142\"\n    },\n    {\n      \"name\": \"P_CDOPERADOR\",\n      \"operator\": \"=\",\n      \"value\": \"109985397023\"\n    },\n    {\n      \"name\": \"DTPROGENTAF\",\n      \"value\": [\n        \"{{ new Date(new Date().setDate(new Date().getDate() - 1)).toLocaleDateString('pt-BR') }}\",\n        \"{{ new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString('pt-BR') }}\"\n      ],\n      \"operator\": \"BETWEEN\",\n      \"isCustomFilter\": true\n    }\n  ],\n  \"page\": null,\n  \"itemsPerPage\": null,\n  \"requestType\": \"FilterData\",\n  \"origin\": {\n    \"containerName\": \"AutorizacaoFornecimento\",\n    \"widgetName\": \"autoForne\",\n    \"containerLabel\": \"Autoriza o de Fornecimento\",\n    \"widgetLabel\": \"Autoriza o de Fornecimento\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        16,
+        -272
+      ],
+      "id": "52c80667-65ab-4675-ba93-9a84e930afca",
+      "name": "TABELA GERAL",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tb_geral",
+          "mode": "list",
+          "cachedResultName": "tb_geral"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nrautoforn": "={{ $json.NRAUTOFORN }}",
+            "idutlconfimatendaf": "={{ $json.IDUTLCONFIMATENDAF }}",
+            "dsetiqueta": "={{ $json.DSETIQUETA }}",
+            "nretiqueta": "={{ $json.NRETIQUETA }}",
+            "nrseqapuraf": "={{ $json.NRSEQAPURAF }}",
+            "cdforneced": "={{ $json.CDFORNECED }}",
+            "nrseqenvioaforn": "={{ $json.NRSEQENVIOAFORN }}",
+            "dtautoforn": "={{ $json.DTAUTOFORN }}",
+            "dtprogentaf": "={{ $json.DTPROGENTAF }}",
+            "idtclassenvafor": "={{ $json.IDTCLASSENVAFOR }}",
+            "vrtotalaf": "={{ $json.VRTOTALAF }}",
+            "filial": "={{ $json.FILIAL }}",
+            "sgestado": "={{ $json.SGESTADO }}",
+            "cdfildest": "={{ $json.CDFILDEST }}",
+            "cdfillanc": "={{ $json.CDFILLANC }}",
+            "logimpressao": "={{ $json.LOGIMPRESSAO }}",
+            "status": "={{ $json.STATUS }}",
+            "nmestado": "={{ $json.NMESTADO }}",
+            "idbaixaaf": "={{ $json.IDBAIXAAF }}",
+            "idtpforpgtaf": "={{ $json.IDTPFORPGTAF }}",
+            "nmformpgto": "={{ $json.NMFORMPGTO }}",
+            "nrdiapgfixaf": "={{ $json.NRDIAPGFIXAF }}",
+            "nrparcpgtoaf": "={{ $json.NRPARCPGTOAF }}",
+            "idutdiapgtaf": "={{ $json.IDUTDIAPGTAF }}",
+            "nrlogplanitemaf": "={{ $json.NRLOGPLANITEMAF }}",
+            "nrorg": "={{ $json.NRORG }}",
+            "idsituatendimentoaf": "={{ $json.IDSITUATENDIMENTOAF }}",
+            "afcancelada": "={{ $json.AFCANCELADA }}",
+            "enovo": "={{ $json.__is_new }}"
+          },
+          "matchingColumns": [
+            "nrautoforn"
+          ],
+          "schema": [
+            {
+              "id": "idutlconfimatendaf",
+              "displayName": "idutlconfimatendaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "dsetiqueta",
+              "displayName": "dsetiqueta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nretiqueta",
+              "displayName": "nretiqueta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nrseqapuraf",
+              "displayName": "nrseqapuraf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "cdforneced",
+              "displayName": "cdforneced",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nrseqenvioaforn",
+              "displayName": "nrseqenvioaforn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nrautoforn",
+              "displayName": "nrautoforn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dtautoforn",
+              "displayName": "dtautoforn",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "dtprogentaf",
+              "displayName": "dtprogentaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "idtclassenvafor",
+              "displayName": "idtclassenvafor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "vrtotalaf",
+              "displayName": "vrtotalaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "filial",
+              "displayName": "filial",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "sgestado",
+              "displayName": "sgestado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "cdfildest",
+              "displayName": "cdfildest",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "cdfillanc",
+              "displayName": "cdfillanc",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "logimpressao",
+              "displayName": "logimpressao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nmestado",
+              "displayName": "nmestado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "idbaixaaf",
+              "displayName": "idbaixaaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "idtpforpgtaf",
+              "displayName": "idtpforpgtaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nmformpgto",
+              "displayName": "nmformpgto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nrdiapgfixaf",
+              "displayName": "nrdiapgfixaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nrparcpgtoaf",
+              "displayName": "nrparcpgtoaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "idutdiapgtaf",
+              "displayName": "idutdiapgtaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nrlogplanitemaf",
+              "displayName": "nrlogplanitemaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "nrorg",
+              "displayName": "nrorg",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "idsituatendimentoaf",
+              "displayName": "idsituatendimentoaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "afcancelada",
+              "displayName": "afcancelada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "id_tb",
+              "displayName": "id_tb",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "enovo",
+              "displayName": "enovo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        512,
+        -240
+      ],
+      "id": "68147580-3535-4c64-b1f0-a74e8b6b191f",
+      "name": "Insert or update rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "zeUQCuZD1eVqLcBb",
+          "name": "DB-STE-GR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet resultado = [];\n\nfor (const item of items) {\n  let raw = item.json.data;\n\n  if (!raw) continue;\n\n  let parsed;\n\n  if (typeof raw === 'string') {\n    try {\n      parsed = JSON.parse(raw);\n    } catch (e) {\n      throw new Error('Erro ao fazer parse: ' + raw.substring(0, 100));\n    }\n  } else {\n    parsed = raw;\n  }\n\n  const lista = parsed?.dataset?.itemAutF || [];\n\n  // 🔥 aqui muda a estrutura (cabeçalho)\n  resultado.push({\n    numero_pedido: item.json.numero_pedido,\n    cod_filial: item.json.filial,\n    itens: lista // array completo dentro\n  });\n}\n\nreturn resultado.map(item => ({\n  json: item\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -496
+      ],
+      "id": "cbaae079-4aad-41a1-9aaf-f1a72c3764f6",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/crud/itemAutF",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json, text/plain, */*"
+            },
+            {
+              "name": "Origin",
+              "value": "https://ecommerce.grsa.com.br"
+            },
+            {
+              "name": "Referer",
+              "value": "https://ecommerce.grsa.com.br/"
+            },
+            {
+              "name": "OAuth-Token",
+              "value": "={{ $('Webhook Trigger').first().json.body.data.sessao.oauthToken }}"
+            },
+            {
+              "name": "User-Id",
+              "value": "={{ $('Webhook Trigger').first().json.body.data.sessao.userId }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ '__goc_session__=' + $('Webhook Trigger').first().json.body.data.sessao.gocSession + '; PHPSESSID=' + $('Webhook Trigger').first().json.body.data.sessao.PHPSESSID }}"
+            },
+            {
+              "name": "cookie",
+              "value": "={{ '__goc_session__=' + $('Webhook Trigger').first().json.body.data.sessao.gocSession + '; PHPSESSID=' + $('Webhook Trigger').first().json.body.data.sessao.PHPSESSID }}"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json, text/plain, */*"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"disableLoader\": false,\n  \"filter\": [\n    {\n      \"name\": \"P_CDFILDEST\",\n      \"operator\": \"=\",\n      \"value\": \"{{ $json.CDFILDEST }}\"\n    },\n    {\n      \"name\": \"P_CDFILLANC\",\n      \"operator\": \"=\",\n      \"value\": \"0003\"\n    },\n    {\n      \"name\": \"P_NRAUTOFORN\",\n      \"operator\": \"=\",\n      \"value\": \"{{ $json.NRAUTOFORN }}\"\n    }\n  ],\n  \"page\": 1,\n  \"itemsPerPage\": 500,\n  \"requestType\": \"FilterData\",\n  \"origin\": {\n    \"containerName\": \"AutorizacaoFornecimento\",\n    \"widgetName\": \"autoForne\",\n    \"containerLabel\": \"Autorizacao de Fornecimento\",\n    \"widgetLabel\": \"Autorizacao de Fornecimento\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        -512
+      ],
+      "id": "631dd366-64ed-49f4-ae24-230f563f34f1",
+      "name": "PEDIDO A PEDIDO",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "64dfee7c-dfc7-4f0a-a413-4ab349cc7dfa",
+              "name": "NRAUTOFORN",
+              "value": "={{ $json.NRAUTOFORN }}",
+              "type": "string"
+            },
+            {
+              "id": "dc72710f-b849-45b4-81de-3c6982654b3d",
+              "name": "CDFILDEST",
+              "value": "={{ $json.CDFILDEST }}",
+              "type": "string"
+            },
+            {
+              "id": "9efe9b3a-1a9d-43a1-877b-f1ad7c30b0d5",
+              "name": "FILIAL",
+              "value": "={{ $json.FILIAL }}",
+              "type": "string"
+            },
+            {
+              "id": "4786974f-2bcf-423c-9bfe-1199a1218883",
+              "name": "AFCANCELADA",
+              "value": "={{ $json.AFCANCELADA }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        -672
+      ],
+      "id": "75a24541-f09c-4f7e-86d2-c0a6bc536f2b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d0af54e8-9f5f-4d01-917b-54b8912a669c",
+              "name": "numero_pedido",
+              "value": "={{ $('Edit Fields').item.json.NRAUTOFORN }}",
+              "type": "string"
+            },
+            {
+              "id": "f160c08d-0557-4a5f-b320-40cf799d53f7",
+              "name": "codcliente",
+              "value": "={{ $('Edit Fields').item.json.CDFILDEST }}",
+              "type": "string"
+            },
+            {
+              "id": "690bb7f8-d544-48b6-801c-11eaf2a8645a",
+              "name": "data",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "6eae2b4a-ba5c-45cd-be8e-c5ceead49776",
+              "name": "filial",
+              "value": "={{ $('Edit Fields').item.json.FILIAL }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1216,
+        -672
+      ],
+      "id": "5170138f-2692-466e-9e2b-53081b70b8ed",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "fromEmail": "nio@grupocampanha.com.br",
+        "toEmail": "rafael.barboza@grupocampanha.com.br;william.silva@grupocampanha.com.br;operacoes.comercial@grupocampanha.com.br",
+        "emailFormat": "text",
+        "text": "=",
+        "options": {
+          "attachments": "=data"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2704,
+        -624
+      ],
+      "id": "1e91d52d-c6e0-41b5-a1df-a7f81fba9b16",
+      "name": "Send email",
+      "webhookId": "540b4131-21eb-4b75-adfa-dc9e4f0d7ade",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "smtp": {
+          "id": "W3xwjUNaRpZeGT2a",
+          "name": "SMTP account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toFile",
+        "fileFormat": "xlsx",
+        "options": {}
+      },
+      "name": "custo_fabrica_teste",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        -496
+      ],
+      "id": "f9aa7c03-02e7-4f6d-bb3b-0b6b63a19d66"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "itens",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1728,
+        -672
+      ],
+      "id": "1dcbd24c-c0a7-4bb9-8031-15e901052682",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tb_item_detalhado",
+          "mode": "list",
+          "cachedResultName": "tb_item_detalhado"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cdarvprod": "={{ $json.itens.CDARVPROD }}",
+            "nmproduto": "={{ $json.itens.NMPRODUTO }}",
+            "sgunidade": "={{ $json.itens.SGUNIDADE }}",
+            "nmmarca": "={{ $json.itens.NMMARCA }}",
+            "qtprogentaf": "={{ $json.itens.QTPROGENTAF }}",
+            "qtrest": "={{ $json.itens.QTREST }}",
+            "vrpreuniaf": "={{ $json.itens.VRPREUNIAF }}",
+            "vrperdesaf": "={{ $json.itens.VRPERDESAF }}",
+            "vrdescitmaf": "={{ $json.itens.VRDESCITMAF }}",
+            "vrtotalitem": "={{ $json.itens.VRTOTALITEM }}",
+            "dtprogentaf": "={{ $json.itens.DTPROGENTAF }}",
+            "cdproduto": "={{ $json.itens.CDPRODUTO }}",
+            "cdmarca": "={{ $json.itens.CDMARCA }}",
+            "dtprogentafant": "={{ $json.itens.DTPROGENTAFANT }}",
+            "dtprogentafdep": "={{ $json.itens.DTPROGENTAFDEP }}",
+            "qtprogentant": "={{ $json.itens.QTPROGENTANT }}",
+            "qtprogentdep": "={{ $json.itens.QTPROGENTDEP }}",
+            "nrorg": "={{ $json.itens.NRORG }}",
+            "idsituatendimentoitm": "={{ $json.itens.IDSITUATENDIMENTOITM }}",
+            "dsjustitmaf": "={{ $json.itens.DSJUSTITMAF }}",
+            "__is_new": "={{ $json.itens.__is_new }}",
+            "numero_pedido": "={{ $json.numero_pedido }}",
+            "codcliente": "={{ $json.cod_filial }}",
+            "dt_atual_n8n": "={{ new Date().toLocaleString('pt-BR', {\n  timeZone: 'America/Sao_Paulo',\n  hour12: false\n}) }}",
+            "status_pedido": "={{ $('Edit Fields').item.json.AFCANCELADA }}"
+          },
+          "matchingColumns": [
+            "numero_pedido"
+          ],
+          "schema": [
+            {
+              "id": "cdarvprod",
+              "displayName": "cdarvprod",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "nmproduto",
+              "displayName": "nmproduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "sgunidade",
+              "displayName": "sgunidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "nmmarca",
+              "displayName": "nmmarca",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "qtprogentaf",
+              "displayName": "qtprogentaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "qtrest",
+              "displayName": "qtrest",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "vrpreuniaf",
+              "displayName": "vrpreuniaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "vrperdesaf",
+              "displayName": "vrperdesaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "vrdescitmaf",
+              "displayName": "vrdescitmaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "vrtotalitem",
+              "displayName": "vrtotalitem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "dtprogentaf",
+              "displayName": "dtprogentaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "cdproduto",
+              "displayName": "cdproduto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "cdmarca",
+              "displayName": "cdmarca",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "dtprogentafant",
+              "displayName": "dtprogentafant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "dtprogentafdep",
+              "displayName": "dtprogentafdep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "qtprogentant",
+              "displayName": "qtprogentant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "qtprogentdep",
+              "displayName": "qtprogentdep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "nrorg",
+              "displayName": "nrorg",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "idsituatendimentoitm",
+              "displayName": "idsituatendimentoitm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "dsjustitmaf",
+              "displayName": "dsjustitmaf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "__is_new",
+              "displayName": "__is_new",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "numero_pedido",
+              "displayName": "numero_pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "codcliente",
+              "displayName": "codcliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "id_tb",
+              "displayName": "id_tb",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "dt_atual_n8n",
+              "displayName": "dt_atual_n8n",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            },
+            {
+              "id": "status_pedido",
+              "displayName": "status_pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2000,
+        -512
+      ],
+      "id": "b8d60fc4-88db-4d83-9993-65a4e13ea49e",
+      "name": "Insert or update rows in a table1",
+      "credentials": {
+        "postgres": {
+          "id": "zeUQCuZD1eVqLcBb",
+          "name": "DB-STE-GR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d000c93c-43b6-4606-9a03-c4a4e3191da5",
+              "name": "CÓD PRODUTO",
+              "value": "={{ $json.cdarvprod }}",
+              "type": "string"
+            },
+            {
+              "id": "f6cdb1d5-f26c-4ee4-b66b-e582f0615d4a",
+              "name": "DESCRIÇÃO DO ITEM",
+              "value": "={{ $json.nmproduto }}",
+              "type": "string"
+            },
+            {
+              "id": "83b2aaf7-945b-48d9-acec-41b32d92d134",
+              "name": "UND VENDA",
+              "value": "={{ $json.sgunidade }}",
+              "type": "string"
+            },
+            {
+              "id": "945ad76f-8d36-48df-bd2d-4f18d755b02a",
+              "name": "QUANTIDADE",
+              "value": "={{ $json.qtprogentaf }}",
+              "type": "string"
+            },
+            {
+              "id": "9894fbfc-f5fc-450c-bbd1-53ed35095290",
+              "name": "QUANTIDADE PENDENTE",
+              "value": "={{ $json.qtrest }}",
+              "type": "string"
+            },
+            {
+              "id": "0a347074-ae94-41b8-83f5-ca0ebccdacf6",
+              "name": "PREÇO UNITÁRIO",
+              "value": "={{ $json.vrpreuniaf }}",
+              "type": "string"
+            },
+            {
+              "id": "f90b6cd6-826e-431a-a1a6-81b38688f482",
+              "name": "DATA DE ENTREGA",
+              "value": "={{ $json.dtprogentaf }}",
+              "type": "string"
+            },
+            {
+              "id": "f7f95c1a-747c-4033-9d6b-69cc13887980",
+              "name": "NÚMERO DO PEDIDO",
+              "value": "={{ $json.numero_pedido }}",
+              "type": "string"
+            },
+            {
+              "id": "1ca192d7-31ba-4c92-ae6f-da3b10ec3863",
+              "name": "LOCAL DE ENTREGA",
+              "value": "={{ $json.codcliente }}",
+              "type": "string"
+            },
+            {
+              "id": "70010e74-956f-4ead-8f18-3a4494ae98e5",
+              "name": "ÚLTIMA BUSCA NO SITE",
+              "value": "={{ $json.dt_atual_n8n }}",
+              "type": "string"
+            },
+            {
+              "id": "cbccd54a-a472-4670-88d5-8c0afb8a9333",
+              "name": "status_pedido",
+              "value": "={{ $json.status_pedido }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2240,
+        -656
+      ],
+      "id": "7daeed5a-528c-4ed4-b496-a7a3906d52f1",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tb_pedido_item_detalhado",
+          "mode": "list",
+          "cachedResultName": "tb_pedido_item_detalhado"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cod_produto": "={{ $json[\"CÓD PRODUTO\"] }}",
+            "numero_pedido": "={{ $json[\"NÚMERO DO PEDIDO\"] }}",
+            "descricao_item": "={{ $json[\"DESCRIÇÃO DO ITEM\"] }}",
+            "und_venda": "={{ $json[\"UND VENDA\"] }}",
+            "quantidade": "={{ $json.QUANTIDADE }}",
+            "quantidade_pendente": "={{ $json[\"QUANTIDADE PENDENTE\"] }}",
+            "preco_unitario": "={{ $json[\"PREÇO UNITÁRIO\"] }}",
+            "data_entrega": "={{ $json[\"DATA DE ENTREGA\"] }}",
+            "local_entrega": "={{ $json[\"LOCAL DE ENTREGA\"] }}",
+            "ultima_busca_site": "={{ $json[\"ÚLTIMA BUSCA NO SITE\"] }}",
+            "status": "={{ $json.status_pedido }}"
+          },
+          "matchingColumns": [
+            "cod_produto",
+            "numero_pedido"
+          ],
+          "schema": [
+            {
+              "id": "cod_produto",
+              "displayName": "cod_produto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "descricao_item",
+              "displayName": "descricao_item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "und_venda",
+              "displayName": "und_venda",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "quantidade",
+              "displayName": "quantidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "quantidade_pendente",
+              "displayName": "quantidade_pendente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "preco_unitario",
+              "displayName": "preco_unitario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "data_entrega",
+              "displayName": "data_entrega",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "numero_pedido",
+              "displayName": "numero_pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "local_entrega",
+              "displayName": "local_entrega",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "ultima_busca_site",
+              "displayName": "ultima_busca_site",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "id_tb",
+              "displayName": "id_tb",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2688,
+        -912
+      ],
+      "id": "c317f8c3-db0f-41e7-b905-bec0331eaa98",
+      "name": "Insert or update rows in a table2",
+      "credentials": {
+        "postgres": {
+          "id": "zeUQCuZD1eVqLcBb",
+          "name": "DB-STE-GR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/crud/dadosUnidade",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json, text/plain, */*"
+            },
+            {
+              "name": "accept-language",
+              "value": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7,ar;q=0.6"
+            },
+            {
+              "name": "oauth-token",
+              "value": "={{ $('Webhook Trigger').first().json.body.data.sessao.oauthToken }}"
+            },
+            {
+              "name": "origin",
+              "value": "https://ecommerce.grsa.com.br"
+            },
+            {
+              "name": "referer",
+              "value": "https://ecommerce.grsa.com.br/"
+            },
+            {
+              "name": "user-agent",
+              "value": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5)"
+            },
+            {
+              "name": "user-id",
+              "value": "={{ $('Webhook Trigger').first().json.body.data.sessao.userId }}"
+            },
+            {
+              "name": "cookie",
+              "value": "={{ '__goc_session__=' + $('Webhook Trigger').first().json.body.data.sessao.gocSession + '; PHPSESSID=' + $('Webhook Trigger').first().json.body.data.sessao.PHPSESSID }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"disableLoader\": false,\n  \"filter\": [\n    {\n      \"name\": \"P_CDFILIAL\",\n      \"operator\": \"=\",\n      \"value\": \"{{ $json.CDFILDEST }}\"\n    }\n  ],\n  \"page\": 1,\n  \"itemsPerPage\": 500,\n  \"requestType\": \"FilterData\",\n  \"origin\": {\n    \"containerName\": \"AutorizacaoFornecimento\",\n    \"widgetName\": \"autoForne\",\n    \"containerLabel\": \"Autorizacao de Fornecimento\",\n    \"widgetLabel\": \"Autorizacao de Fornecimento\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        896,
+        -832
+      ],
+      "id": "ddd7931d-46e5-4c94-bd9b-9456c911e100",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet resultado = [];\n\nfor (const item of items) {\n  const data = item.json;\n\n  const raw =\n    data.dados ??\n    data.data ??\n    data.body ??\n    data.response ??\n    data;\n\n  let parsed;\n\n  if (typeof raw === 'string') {\n    try {\n      parsed = JSON.parse(raw);\n    } catch (e) {\n      throw new Error('Erro ao fazer parse: ' + raw.substring(0, 200));\n    }\n  } else {\n    parsed = raw;\n  }\n\n  const lista =\n    parsed?.dataset?.autoForne ??\n    parsed?.autoForne ??\n    parsed?.dataset ??\n    [];\n\n  if (Array.isArray(lista)) {\n    resultado.push(\n      ...lista.map(i => ({\n        json: i\n      }))\n    );\n  } else {\n    resultado.push({ json: parsed });\n  }\n}\n\nreturn resultado;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        -1072
+      ],
+      "id": "62827e34-bd5c-40ee-b176-13b44a5fbee0",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "dataset.dadosUnidade",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        -864
+      ],
+      "id": "13011ab4-5f19-4667-92f5-5fd218c47b45",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be471db6-d797-48ce-8e13-8d007538a558",
+              "name": "nome_entrega",
+              "value": "={{ $json[\"dataset.dadosUnidade\"].FILIAL }}",
+              "type": "string"
+            },
+            {
+              "id": "3c5d3a95-ab85-45da-a152-28c503dd7b5e",
+              "name": "cnpj_entrega",
+              "value": "={{ $json[\"dataset.dadosUnidade\"].NRINSJURFILI }}",
+              "type": "string"
+            },
+            {
+              "id": "7dadba14-d663-4d7d-a200-11f2959a8d6a",
+              "name": "endereco_rua",
+              "value": "={{ $json[\"dataset.dadosUnidade\"].DSENDEFILI }}",
+              "type": "string"
+            },
+            {
+              "id": "2faee866-3e98-4207-8134-6945d7e3ad9e",
+              "name": "endereco_bairro",
+              "value": "={{ $json[\"dataset.dadosUnidade\"].NMBAIRFILI }}",
+              "type": "string"
+            },
+            {
+              "id": "b9bfc958-03dd-4fa1-bae5-1414af122843",
+              "name": "endereco_municipio",
+              "value": "={{ $json[\"dataset.dadosUnidade\"].NMMUNICIFIL }}",
+              "type": "string"
+            },
+            {
+              "id": "2b8de511-dae9-4af6-96ca-aa6293ea6fe5",
+              "name": "config_entrega",
+              "value": "={{ $json[\"dataset.dadosUnidade\"].DSPERIENTFIL }}",
+              "type": "string"
+            },
+            {
+              "id": "3482aaa2-2d58-4246-9c38-e5d4eb360b63",
+              "name": "endereco_cep",
+              "value": "={{ $json[\"dataset.dadosUnidade\"].NRCEPFILI }}",
+              "type": "string"
+            },
+            {
+              "id": "8d5eaba4-116c-418f-b6db-23abcd8244d3",
+              "name": "cod_cliente_entrega",
+              "value": "={{ $('Edit Fields').item.json.CDFILDEST }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1792,
+        -1008
+      ],
+      "id": "0d77f073-41e6-42c4-b0d4-6497a71f7391",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        -880
+      ],
+      "id": "559a686f-b28a-47a6-932d-bb4b7a53b1a3",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tb_endereco_entrega",
+          "mode": "list",
+          "cachedResultName": "tb_endereco_entrega"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cod_cliente_entrega": "={{ $json.cod_cliente_entrega }}",
+            "nome_entrega": "={{ $json.nome_entrega }}",
+            "cnpj_entrega": "={{ $json.cnpj_entrega }}",
+            "endereco_rua": "={{ $json.endereco_rua }}",
+            "endereco_bairro": "={{ $json.endereco_bairro }}",
+            "endereco_municipio": "={{ $json.endereco_municipio }}",
+            "config_entrega": "={{ $json.config_entrega }}",
+            "endereco_cep": "={{ $json.endereco_cep }}"
+          },
+          "matchingColumns": [
+            "cod_cliente_entrega"
+          ],
+          "schema": [
+            {
+              "id": "nome_entrega",
+              "displayName": "nome_entrega",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "cnpj_entrega",
+              "displayName": "cnpj_entrega",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "endereco_rua",
+              "displayName": "endereco_rua",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "endereco_bairro",
+              "displayName": "endereco_bairro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "endereco_municipio",
+              "displayName": "endereco_municipio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "config_entrega",
+              "displayName": "config_entrega",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "endereco_cep",
+              "displayName": "endereco_cep",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "cod_cliente_entrega",
+              "displayName": "cod_cliente_entrega",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id_tb",
+              "displayName": "id_tb",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2464,
+        -1152
+      ],
+      "id": "1e611efd-8dcf-4515-894d-cd7d07cc8754",
+      "name": "Insert or update rows in a table3",
+      "credentials": {
+        "postgres": {
+          "id": "zeUQCuZD1eVqLcBb",
+          "name": "DB-STE-GR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "af-dump-trigger",
+        "responseMode": "onReceived",
+        "options": {
+          "responseCode": 200,
+          "responseBody": "{{ JSON.stringify({ ok: true, message: 'Dump recebido' }) }}"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -688,
+        -288
+      ],
+      "id": "9b6311e4-4b36-45cf-a725-ac8ac5bf581e",
+      "name": "Webhook Trigger",
+      "webhookId": "af-dump-trigger",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "LOGIN SITE GR": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert or update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TABELA GERAL": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert or update rows in a table": {
+      "main": [
+        []
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PEDIDO A PEDIDO": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "PEDIDO A PEDIDO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "custo_fabrica_teste": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Insert or update rows in a table1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert or update rows in a table1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "custo_fabrica_teste",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert or update rows in a table2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code3": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Insert or update rows in a table3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "77dcfb17dadc2aa55384203fc325ae748a9e865133feadfc000a194aebec0cb2"
+  }
+}

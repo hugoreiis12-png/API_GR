@@ -1,0 +1,5 @@
+# Crontab lido pelo supercronic (fuso definido por TZ no container).
+# Formato: minuto hora dia-do-mes mes dia-da-semana  comando
+#
+# 11:57, de segunda(1) a sexta(5). Roda a coleta e envia o dump ao n8n.
+57 11 * * 1-5 node /app/fuzzing.js

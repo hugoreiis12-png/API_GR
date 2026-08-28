@@ -1,0 +1,17 @@
+# Stack para o Portainer (deploy via Git). Portainer builda a imagem a partir
+# do Dockerfile deste repositorio e sobe o container com o agendador.
+services:
+  api-gr:
+    build: .
+    image: api-gr:latest
+    container_name: api-gr
+    restart: unless-stopped
+    # O Chromium trava com o /dev/shm padrao do Docker (64MB); ampliamos.
+    shm_size: "1gb"
+    environment:
+      TZ: America/Sao_Paulo
+      # URL de PRODUCAO do webhook (o workflow n8n precisa estar ATIVO).
+      N8N_WEBHOOK_URL: "http://192.168.0.231:5678/webhook/af-dump-trigger"
+      # Janela de datas (opcional): vazio = hoje; dias somados ao inicio.
+      # RANGE_START: ""
+      RANGE_DAYS: "6"

@@ -1,0 +1,7 @@
+node_modules
+af_full_dump.json
+n8n.json
+all_n8n_fluxo.json
+*.md
+.git
+.gitignore
