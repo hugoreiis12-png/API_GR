@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     cron \
     curl \
     wget \
-    chromium-browser \
+    chromium \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar arquivos do projeto
