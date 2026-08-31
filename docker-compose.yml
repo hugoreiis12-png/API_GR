@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  api-gr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-gr-collector
+    ports:
+      - "3005:3005"
+    environment:
+      - SYNC_API_URL=http://localhost:3005/dump-ready
+      - SYNC_PORT=3005
+      - N8N_WEBHOOK_URL=http://192.168.0.231:5678/webhook/af-dump-trigger
+    volumes:
+      - ./af_full_dump.json:/app/af_full_dump.json
+      - ./logs:/var/log
+    restart: unless-stopped
+    networks:
+      - api-network
+
+networks:
+  api-network:
+    driver: bridge
