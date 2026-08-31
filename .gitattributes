@@ -1,0 +1,5 @@
+# Scripts que rodam no container Linux precisam de fim de linha LF,
+# senao o Docker quebra com "/bin/bash^M: bad interpreter".
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile text eol=lf
