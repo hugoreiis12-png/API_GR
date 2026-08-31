@@ -69,7 +69,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\nconst binary = item?.binary?.data;\n\nif (!binary) {\n  return [];\n}\n\nconst raw = Buffer.from(binary, 'base64').toString('utf8');\nlet payload;\n\ntry {\n  payload = JSON.parse(raw);\n} catch (error) {\n  throw new Error('Falha ao ler af_full_dump.json: ' + error.message);\n}\n\nconst rows = Array.isArray(payload?.afsCompletas) ? payload.afsCompletas : [];\n\nif (!rows.length) {\n  return [];\n}\n\nreturn rows.map(row => ({ json: row }));"
+        "jsCode": "const item = $input.first();\nconst j = item?.json ?? {};\n\n// Tenta os formatos possiveis onde o dump pode chegar.\n// Webhook (sync-api): $json.body.data. Outras versoes: $json.data, ou o dump direto.\nlet payload =\n  j.body?.data ??\n  j.data ??\n  (j.body?.afsCompletas ? j.body : null) ??\n  (j.afsCompletas ? j : null);\n\n// Origem alternativa: Read Binary File (Schedule/LOGIN leem af_full_dump.json).\nif (!payload && item?.binary?.data) {\n  const raw = Buffer.from(item.binary.data, \"base64\").toString(\"utf8\");\n  try {\n    payload = JSON.parse(raw);\n  } catch (error) {\n    throw new Error(\"Falha ao ler af_full_dump.json: \" + error.message);\n  }\n}\n\nif (!payload) {\n  // Em vez de sair vazio, mostra o que realmente chegou para facilitar o debug.\n  throw new Error(\"Payload nao encontrado. Chaves recebidas em $json: \" + JSON.stringify(Object.keys(j)));\n}\n\nconst rows = Array.isArray(payload.afsCompletas) ? payload.afsCompletas : [];\nif (!rows.length) {\n  throw new Error(\"afsCompletas vazio ou nao e array. Chaves do payload: \" + JSON.stringify(Object.keys(payload)));\n}\n\nreturn rows.map(row => ({ json: row }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -83,7 +83,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://ecommerce.grsa.com.br/backend/index.php/crud/autoForne",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/autoForne",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -501,7 +501,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://ecommerce.grsa.com.br/backend/index.php/crud/itemAutF",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/itemAutF",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -519,19 +519,19 @@
             },
             {
               "name": "OAuth-Token",
-              "value": "={{ $('Code').item.json.dataset.request.TOKEN }}"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().oauthToken }}"
             },
             {
               "name": "User-Id",
-              "value": "jf3t6vglg1k"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().userId }}"
             },
             {
               "name": "Cookie",
-              "value": "__goc_session__=xkcoavhxksbeduomdfbvdjprksswqmip; PHPSESSID=tb7tor14ke9tfoed1or1k9me6n"
+              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
             },
             {
               "name": "cookie",
-              "value": "__goc_session__=xkcoavhxksbeduomdfbvdjprksswqmip;PHPSESSID=tb7tor14ke9tfoed1or1k9me6n;"
+              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
             },
             {
               "name": "User-Agent",
@@ -1286,7 +1286,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://ecommerce.grsa.com.br/backend/index.php/crud/dadosUnidade",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/dadosUnidade",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1300,7 +1300,7 @@
             },
             {
               "name": "oauth-token",
-              "value": "={{ $('Code').item.json.dataset.request.TOKEN }}"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().oauthToken }}"
             },
             {
               "name": "origin",
@@ -1316,11 +1316,11 @@
             },
             {
               "name": "user-id",
-              "value": "jf3t6vglg1k"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().userId }}"
             },
             {
               "name": "cookie",
-              "value": "__goc_session__=znjcswvcpfpjlgtcfctjipailefspwth;PHPSESSID=smivdap7t1b3rdgl4raaggh1al;"
+              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
             }
           ]
         },
@@ -1607,7 +1607,9 @@
     },
     {
       "parameters": {
-        "interval": [1],
+        "interval": [
+          1
+        ],
         "triggerTimes": {
           "item": [
             {
@@ -1624,7 +1626,8 @@
         -100
       ],
       "id": "schedule-trigger-11-59",
-      "name": "Schedule Daily 11:59"
+      "name": "Schedule Daily 11:59",
+      "disabled": true
     }
   ],
   "connections": {
@@ -1850,7 +1853,7 @@
       "main": [
         [
           {
-            "node": "Code",
+            "node": "Code1",
             "type": "main",
             "index": 0
           }

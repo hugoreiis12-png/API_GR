@@ -9,15 +9,26 @@ services:
     ports:
       - "3005:3005"
     environment:
+      # sync-api e fuzzing convivem no mesmo container -> localhost.
       - SYNC_API_URL=http://localhost:3005/dump-ready
       - SYNC_PORT=3005
+      # Producao: workflow precisa estar Active no n8n. Ajuste o IP se o n8n mudar.
       - N8N_WEBHOOK_URL=http://192.168.0.231:5678/webhook/af-dump-trigger
+      # Onde o dump e gravado/lido dentro do container (volume persistente).
+      - DUMP_DIR=/app/data
+      - CHROME_PATH=/usr/bin/chromium
+      - TZ=America/Sao_Paulo
     volumes:
-      - ./af_full_dump.json:/app/af_full_dump.json
-      - ./logs:/var/log
+      # Volumes nomeados: evitam o problema de bind-mount de arquivo unico no Portainer.
+      - af-dump:/app/data
+      - cron-logs:/var/log
     restart: unless-stopped
     networks:
       - api-network
+
+volumes:
+  af-dump:
+  cron-logs:
 
 networks:
   api-network:
