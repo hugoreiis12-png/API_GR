@@ -1,5 +1,6 @@
 # Dockerfile para API_GR com Node.js, Playwright e crontab
-FROM node:18-bullseye
+# Node 20+ e obrigatorio: o Playwright (>=1.50) recusa rodar no Node 18.
+FROM node:20-bullseye
 
 WORKDIR /app
 
@@ -31,13 +32,13 @@ RUN npm install
 
 # Crontab do coletor (formato user-crontab, sem campo de usuario).
 # - PATH/TZ explicitos: o daemon do cron nao herda o ambiente do container.
-# - Todo dia 11:57 (dia-da-semana = *). O envio ao n8n acontece em cadeia: fuzzing.js -> sync-api -> webhook.
+# - Todo dia 11:59 (dia-da-semana = *). O envio ao n8n acontece em cadeia: fuzzing.js -> sync-api -> webhook.
 # - flock -n: se a execucao anterior ainda roda, o cron pula (evita sobreposicao).
 RUN printf '%s\n' \
     'PATH=/usr/local/bin:/usr/bin:/bin' \
     'TZ=America/Sao_Paulo' \
     'CHROME_PATH=/usr/bin/chromium' \
-    '57 11 * * * flock -n /tmp/fuzzing.lock -c "cd /app && node fuzzing.js >> /var/log/cron-fuzzing.log 2>&1"' \
+    '59 11 * * * flock -n /tmp/fuzzing.lock -c "cd /app && node fuzzing.js >> /var/log/cron-fuzzing.log 2>&1"' \
     > /app/crontab.txt \
     && crontab /app/crontab.txt
 
