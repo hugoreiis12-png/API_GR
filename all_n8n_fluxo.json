@@ -3,86 +3,6 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://ecommerce.grsa.com.br/backend/index.php/login",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/json, text/plain, */*"
-            },
-            {
-              "name": "Origin",
-              "value": "https://ecommerce.grsa.com.br"
-            },
-            {
-              "name": "Referer",
-              "value": "https://ecommerce.grsa.com.br/"
-            },
-            {
-              "name": "User-Agent",
-              "value": "Mozilla/5.0"
-            },
-            {
-              "name": "User-Id",
-              "value": "jf3t6vglg1k"
-            },
-            {
-              "name": "Cookie",
-              "value": "__goc_session__=xkcoavhxksbeduomdfbvdjprksswqmip"
-            },
-            {
-              "name": "cookie",
-              "value": "__goc_session__=xkcoavhxksbeduomdfbvdjprksswqmip;"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\n  \"requestType\": \"Row\",\n  \"row\": {\n    \"USER_EMAIL\": \"william.silva@grupocampanha.com.br\",\n    \"PASSWORD\": \"1234567890\",\n    \"PRODUCT_ID\": 1694,\n    \"REQUESTER_URL\": \"https://ecommerce.grsa.com.br/#/product#Login\",\n    \"ATTEMPTS\": 1,\n    \"SHOW_FULL_OPERATOR\": false,\n    \"LOGIN_LANGUAGE\": \"pt_br\"\n  },\n  \"origin\": {\n    \"containerLabel\": \"Login\",\n    \"widgetLabel\": \"Login\"\n  }\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -432,
-        -288
-      ],
-      "id": "5ec2bc07-ed40-490a-a0c6-b44a8cb34527",
-      "name": "LOGIN SITE GR",
-      "retryOnFail": true
-    },
-    {
-      "parameters": {
-        "filePath": "/data/af_full_dump.json",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.readBinaryFile",
-      "typeVersion": 1,
-      "position": [
-        -208,
-        -512
-      ],
-      "id": "99c05802-783f-4303-a221-868c5bf8d019",
-      "name": "Code",
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first();\nconst j = item?.json ?? {};\n\n// Tenta os formatos possiveis onde o dump pode chegar.\n// Webhook (sync-api): $json.body.data. Outras versoes: $json.data, ou o dump direto.\nlet payload =\n  j.body?.data ??\n  j.data ??\n  (j.body?.afsCompletas ? j.body : null) ??\n  (j.afsCompletas ? j : null);\n\n// Origem alternativa: Read Binary File (Schedule/LOGIN leem af_full_dump.json).\nif (!payload && item?.binary?.data) {\n  const raw = Buffer.from(item.binary.data, \"base64\").toString(\"utf8\");\n  try {\n    payload = JSON.parse(raw);\n  } catch (error) {\n    throw new Error(\"Falha ao ler af_full_dump.json: \" + error.message);\n  }\n}\n\nif (!payload) {\n  // Em vez de sair vazio, mostra o que realmente chegou para facilitar o debug.\n  throw new Error(\"Payload nao encontrado. Chaves recebidas em $json: \" + JSON.stringify(Object.keys(j)));\n}\n\nconst rows = Array.isArray(payload.afsCompletas) ? payload.afsCompletas : [];\nif (!rows.length) {\n  throw new Error(\"afsCompletas vazio ou nao e array. Chaves do payload: \" + JSON.stringify(Object.keys(payload)));\n}\n\nreturn rows.map(row => ({ json: row }));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        256,
-        -400
-      ],
-      "id": "bd4acc37-6588-4c6a-921d-bc00628d470f",
-      "name": "Code1"
-    },
-    {
-      "parameters": {
-        "method": "POST",
         "url": "https://ecommerce.grsa.com.br/backend/index.php/autoForne",
         "sendHeaders": true,
         "headerParameters": {
@@ -109,7 +29,7 @@
             },
             {
               "name": "OAuth-Token",
-              "value": "={{ $json.dataset.request.TOKEN }}"
+              "value": "29246ed165538d3320179d136a9701de51ea420"
             },
             {
               "name": "User-Id",
@@ -127,16 +47,16 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"disableLoader\": false,\n  \"filter\": [\n    {\n      \"name\": \"P_CDFORNECED\",\n      \"operator\": \"=\",\n      \"value\": \"J15268427000142\"\n    },\n    {\n      \"name\": \"P_CDOPERADOR\",\n      \"operator\": \"=\",\n      \"value\": \"109985397023\"\n    },\n    {\n      \"name\": \"DTPROGENTAF\",\n      \"value\": [\n        \"{{ new Date(new Date().setDate(new Date().getDate() - 1)).toLocaleDateString('pt-BR') }}\",\n        \"{{ new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString('pt-BR') }}\"\n      ],\n      \"operator\": \"BETWEEN\",\n      \"isCustomFilter\": true\n    }\n  ],\n  \"page\": null,\n  \"itemsPerPage\": null,\n  \"requestType\": \"FilterData\",\n  \"origin\": {\n    \"containerName\": \"AutorizacaoFornecimento\",\n    \"widgetName\": \"autoForne\",\n    \"containerLabel\": \"Autoriza o de Fornecimento\",\n    \"widgetLabel\": \"Autoriza o de Fornecimento\"\n  }\n}",
+        "jsonBody": "={\n  \"disableLoader\": false,\n  \"filter\": [\n    {\n      \"name\": \"DTPROGENTAF\",\n      \"value\": [\n        \"01/09/2026\",\n        \"07/09/2026\"\n      ],\n      \"operator\": \"BETWEEN\",\n      \"isCustomFilter\": true\n    },\n    {\n      \"name\": \"STATUS\",\n      \"value\": [\n        \"N\"\n      ],\n      \"operator\": \"IN\",\n      \"isCustomFilter\": true\n    },\n    {\n      \"name\": \"IDSITUATENDIMENTOAF\",\n      \"value\": [\n        \"N\"\n      ],\n      \"operator\": \"IN\",\n      \"isCustomFilter\": true\n    },\n    {\n      \"name\": \"AFCANCELADA\",\n      \"value\": [\n        \"N\"\n      ],\n      \"operator\": \"IN\",\n      \"isCustomFilter\": true\n    }\n  ],\n  \"page\": 1,\n  \"itemsPerPage\": 40,\n  \"requestType\": \"FilterData\",\n  \"origin\": {\n    \"containerName\": \"AutorizacaoFornecimento\",\n    \"widgetName\": \"zhFilterPreferencesSelectConditions\",\n    \"containerLabel\": \"Autorização de Fornecimento\",\n    \"widgetLabel\": \"Filtro\"\n  }\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        16,
-        -272
+        -3376,
+        48
       ],
-      "id": "52c80667-65ab-4675-ba93-9a84e930afca",
+      "id": "9f80453d-9bc9-4902-8466-5f29f3d47af0",
       "name": "TABELA GERAL",
       "retryOnFail": true
     },
@@ -473,10 +393,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        512,
-        -240
+        -2608,
+        144
       ],
-      "id": "68147580-3535-4c64-b1f0-a74e8b6b191f",
+      "id": "fe691f6f-cd11-4b18-a7c2-ec5484d9d73c",
       "name": "Insert or update rows in a table",
       "credentials": {
         "postgres": {
@@ -492,10 +412,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1520,
-        -496
+        -1520,
+        -112
       ],
-      "id": "cbaae079-4aad-41a1-9aaf-f1a72c3764f6",
+      "id": "21bc377d-c3c8-4bd7-b943-9123291ac2aa",
       "name": "Code2"
     },
     {
@@ -519,19 +439,19 @@
             },
             {
               "name": "OAuth-Token",
-              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().oauthToken }}"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().oauthToken }}"
             },
             {
               "name": "User-Id",
-              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().userId }}"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().userId }}"
             },
             {
               "name": "Cookie",
-              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
+              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
             },
             {
               "name": "cookie",
-              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
+              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
             },
             {
               "name": "User-Agent",
@@ -557,10 +477,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        896,
-        -512
+        -2208,
+        -32
       ],
-      "id": "631dd366-64ed-49f4-ae24-230f563f34f1",
+      "id": "14bb3d30-a202-4bca-951b-fad7b2dc8f5c",
       "name": "PEDIDO A PEDIDO",
       "retryOnFail": true,
       "waitBetweenTries": 5000
@@ -600,10 +520,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        464,
-        -672
+        -2624,
+        -288
       ],
-      "id": "75a24541-f09c-4f7e-86d2-c0a6bc536f2b",
+      "id": "16dbe230-e433-4610-bc32-8042d1f1d0e3",
       "name": "Edit Fields"
     },
     {
@@ -641,10 +561,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1216,
-        -672
+        -1824,
+        -288
       ],
-      "id": "5170138f-2692-466e-9e2b-53081b70b8ed",
+      "id": "9ceb7132-e065-44c9-97d1-b355c5c66ff2",
       "name": "Edit Fields1"
     },
     {
@@ -660,10 +580,10 @@
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        2704,
-        -624
+        -336,
+        -240
       ],
-      "id": "1e91d52d-c6e0-41b5-a1df-a7f81fba9b16",
+      "id": "d226bbd5-d77c-49c9-beda-a9c7bde60808",
       "name": "Send email",
       "webhookId": "540b4131-21eb-4b75-adfa-dc9e4f0d7ade",
       "retryOnFail": true,
@@ -685,10 +605,10 @@
       "type": "n8n-nodes-base.spreadsheetFile",
       "typeVersion": 1,
       "position": [
-        2464,
-        -496
+        -576,
+        -112
       ],
-      "id": "f9aa7c03-02e7-4f6d-bb3b-0b6b63a19d66"
+      "id": "00162519-671b-416d-b480-2ea56a0aabba"
     },
     {
       "parameters": {
@@ -699,10 +619,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1728,
-        -672
+        -1312,
+        -288
       ],
-      "id": "1dcbd24c-c0a7-4bb9-8031-15e901052682",
+      "id": "f22eacc3-3a55-4ddc-86ba-4afdf81a778a",
       "name": "Split Out"
     },
     {
@@ -1021,10 +941,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2000,
-        -512
+        -1040,
+        -128
       ],
-      "id": "b8d60fc4-88db-4d83-9993-65a4e13ea49e",
+      "id": "90e72b7c-cfd0-4a0a-bced-9da96e23de9c",
       "name": "Insert or update rows in a table1",
       "credentials": {
         "postgres": {
@@ -1110,10 +1030,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2240,
-        -656
+        -800,
+        -272
       ],
-      "id": "7daeed5a-528c-4ed4-b496-a7a3906d52f1",
+      "id": "b0529184-ad33-4de3-8329-ca9e29b8f50b",
       "name": "Edit Fields2"
     },
     {
@@ -1271,10 +1191,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2688,
-        -912
+        -352,
+        -528
       ],
-      "id": "c317f8c3-db0f-41e7-b905-bec0331eaa98",
+      "id": "846c8d35-8bce-47b5-a4fc-60752c83bf99",
       "name": "Insert or update rows in a table2",
       "credentials": {
         "postgres": {
@@ -1286,7 +1206,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://ecommerce.grsa.com.br/backend/index.php/dadosUnidade",
+        "url": "https://ecommerce.grsa.com.br/backend/index.php/crud/dadosUnidade",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -1300,7 +1220,7 @@
             },
             {
               "name": "oauth-token",
-              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().oauthToken }}"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().oauthToken }}"
             },
             {
               "name": "origin",
@@ -1316,11 +1236,11 @@
             },
             {
               "name": "user-id",
-              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().userId }}"
+              "value": "={{ (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().userId }}"
             },
             {
               "name": "cookie",
-              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
+              "value": "={{ '__goc_session__=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().gocSession + ';PHPSESSID=' + (function(){var j=$('Webhook Trigger').first().json;var s=(j.body&&j.body.data&&j.body.data.sessao)||(j.data&&j.data.sessao)||(j.body&&j.body.sessao)||j.sessao||{};return s;})().PHPSESSID + ';' }}"
             }
           ]
         },
@@ -1336,10 +1256,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        896,
-        -832
+        -2240,
+        -496
       ],
-      "id": "ddd7931d-46e5-4c94-bd9b-9456c911e100",
+      "id": "b0b9aad6-b592-41b0-8a51-75860ada0844",
       "name": "HTTP Request",
       "retryOnFail": true,
       "waitBetweenTries": 5000
@@ -1351,10 +1271,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1280,
-        -1072
+        -1824,
+        -688
       ],
-      "id": "62827e34-bd5c-40ee-b176-13b44a5fbee0",
+      "id": "5aee69be-c9c3-4aa0-bb9f-a37a5ff7770e",
       "name": "Code3"
     },
     {
@@ -1366,10 +1286,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1504,
-        -864
+        -1536,
+        -480
       ],
-      "id": "13011ab4-5f19-4667-92f5-5fd218c47b45",
+      "id": "b1583b56-424e-4424-abea-6262863fa538",
       "name": "Split Out1"
     },
     {
@@ -1431,10 +1351,10 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1792,
-        -1008
+        -1248,
+        -624
       ],
-      "id": "0d77f073-41e6-42c4-b0d4-6497a71f7391",
+      "id": "5657cd40-f547-435f-a693-15d8afbe513e",
       "name": "Edit Fields3"
     },
     {
@@ -1444,10 +1364,10 @@
       "type": "n8n-nodes-base.removeDuplicates",
       "typeVersion": 2,
       "position": [
-        2032,
-        -880
+        -1008,
+        -496
       ],
-      "id": "559a686f-b28a-47a6-932d-bb4b7a53b1a3",
+      "id": "b2f06cfd-c077-403a-9864-133875f2c167",
       "name": "Remove Duplicates"
     },
     {
@@ -1572,10 +1492,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2464,
-        -1152
+        -576,
+        -768
       ],
-      "id": "1e611efd-8dcf-4515-894d-cd7d07cc8754",
+      "id": "f171cc6b-4c4f-4427-9512-eb339e6671f9",
       "name": "Insert or update rows in a table3",
       "credentials": {
         "postgres": {
@@ -1586,114 +1506,59 @@
     },
     {
       "parameters": {
-        "httpMethod": "POST",
         "path": "af-dump-trigger",
-        "responseMode": "onReceived",
-        "options": {
-          "responseCode": 200,
-          "responseBody": "{{ JSON.stringify({ ok: true, message: 'Dump recebido' }) }}"
-        }
+        "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
       "position": [
-        -688,
-        -288
+        -3888,
+        48
       ],
-      "id": "9b6311e4-4b36-45cf-a725-ac8ac5bf581e",
+      "id": "01286ce6-62c0-4898-980b-9a0b6ad7456a",
       "name": "Webhook Trigger",
       "webhookId": "af-dump-trigger",
       "notesInFlow": true
     },
     {
       "parameters": {
-        "interval": [
-          1
-        ],
-        "triggerTimes": {
-          "item": [
-            {
-              "hour": 11,
-              "minute": 59
-            }
-          ]
-        }
+        "jsCode": "const item = $input.first().json;\n\n// tenta achar o campo automaticamente\nconst raw =\n  item.dados ??\n  item.data ??\n  item.body ??\n  item.response ??\n  item;\n\n// tenta converter só se for string\nlet parsed;\n\nif (typeof raw === 'string') {\n  try {\n    parsed = JSON.parse(raw);\n  } catch (e) {\n    throw new Error('Erro ao fazer parse: ' + raw.substring(0, 200));\n  }\n} else {\n  parsed = raw;\n}\n\n// tenta encontrar o array correto\nconst lista =\n  parsed?.dataset?.autoForne ??\n  parsed?.autoForne ??\n  parsed?.dataset ??\n  [];\n\n// garante que é array\nif (!Array.isArray(lista)) {\n  return [{ json: parsed }];\n}\n\n// explode em itens\nreturn lista.map(i => ({\n  json: i\n}));"
       },
-      "type": "n8n-nodes-base.scheduleTrigger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3056,
+        -176
+      ],
+      "id": "37e61888-d146-4792-84ed-22df3eb7c052",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "amount": 0.5,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        -688,
-        -100
+        -3616,
+        48
       ],
-      "id": "schedule-trigger-11-59",
-      "name": "Schedule Daily 11:59",
-      "disabled": true
+      "id": "93c3b2dc-439c-4388-8c97-3a6357e37666",
+      "name": "Wait",
+      "webhookId": "746020a4-e751-4e20-9d75-87bffc716e09"
     }
   ],
   "connections": {
-    "Schedule Daily 11:59": {
-      "main": [
-        [
-          {
-            "node": "Code",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "LOGIN SITE GR": {
-      "main": [
-        [
-          {
-            "node": "Code",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code": {
-      "main": [
-        [
-          {
-            "node": "Code1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code1": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Insert or update rows in a table",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "TABELA GERAL": {
       "main": [
         [
           {
-            "node": "Code1",
+            "node": "Code4",
             "type": "main",
             "index": 0
           }
         ]
-      ]
-    },
-    "Insert or update rows in a table": {
-      "main": [
-        []
       ]
     },
     "Code2": {
@@ -1853,7 +1718,34 @@
       "main": [
         [
           {
-            "node": "Code1",
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert or update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "TABELA GERAL",
             "type": "main",
             "index": 0
           }
@@ -1863,7 +1755,6 @@
   },
   "pinData": {},
   "meta": {
-    "templateCredsSetupCompleted": true,
     "instanceId": "77dcfb17dadc2aa55384203fc325ae748a9e865133feadfc000a194aebec0cb2"
   }
 }

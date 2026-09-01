@@ -7,6 +7,9 @@ const PORT = Number(process.env.SYNC_PORT || 3005);
 const FILE_NAME = 'af_full_dump.json';
 // DUMP_DIR permite persistir o dump num volume no Docker; default = raiz do projeto (dev local).
 const FILE_PATH = path.join(process.env.DUMP_DIR || __dirname, FILE_NAME);
+// Base de PRODUCAO: o POST vai para /webhook/ (exige o workflow Active no n8n).
+// Host 192.168.0.231 (0.0.0.0 e endereco de bind, nao roteavel como destino).
+// Para testar no editor, troque para a URL /webhook-test/ e clique "Listen".
 const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || 'http://192.168.0.231:5678/webhook/af-dump-trigger';
 
 // Extrai uma mensagem util de qualquer erro. Em Node moderno, uma falha de
