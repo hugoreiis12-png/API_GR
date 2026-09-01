@@ -1,5 +1,6 @@
-// Sincroniza o arquivo af_full_dump.json com n8n via webhook 
+// Sincroniza o arquivo af_full_dump.json postando em dois webhooks (n8n + Bubble)
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -7,10 +8,12 @@ const PORT = Number(process.env.SYNC_PORT || 3005);
 const FILE_NAME = 'af_full_dump.json';
 // DUMP_DIR permite persistir o dump num volume no Docker; default = raiz do projeto (dev local).
 const FILE_PATH = path.join(process.env.DUMP_DIR || __dirname, FILE_NAME);
-// Base de PRODUCAO: o POST vai para /webhook/ (exige o workflow Active no n8n).
-// Host 192.168.0.231 (0.0.0.0 e endereco de bind, nao roteavel como destino).
-// Para testar no editor, troque para a URL /webhook-test/ e clique "Listen".
+// Dois destinos para o mesmo payload, disparados em paralelo:
+//  - n8n: exige o workflow Active. Host 192.168.0.231 (use o IP real do n8n).
+//  - Bubble: workflow do Bubble (version-test).
+// Cada URL pode ser sobrescrita pela env correspondente.
 const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || 'http://192.168.0.231:5678/webhook/af-dump-trigger';
+const BUBBLE_WEBHOOK = process.env.BUBBLE_WEBHOOK_URL || 'https://comprover.bubbleapps.io/version-test/api/1.1/wf/chave_gr/initialize';
 
 // Extrai uma mensagem util de qualquer erro. Em Node moderno, uma falha de
 // conexao vem como AggregateError com .message vazio e os erros reais em
@@ -44,7 +47,8 @@ function sendJson(url, payload) {
       }
     };
 
-    const req = http.request(options, (res) => {
+    const transport = parsed.protocol === 'https:' ? https : http;
+    const req = transport.request(options, (res) => {
       let data = '';
       res.on('data', chunk => {
         data += chunk.toString();
@@ -131,9 +135,32 @@ async function dispatchFileToN8N(filePath = FILE_PATH, source = 'sync-api') {
     data,
   };
 
-  const result = await postToWebhook(N8N_WEBHOOK, payload);
+  const result = await dispatchToWebhooks(payload);
   lastDispatchAt = Date.now();
   return result;
+}
+
+// Posta o mesmo payload nos dois webhooks (n8n + Bubble) em paralelo. Cada envio
+// e independente: usa allSettled para que a falha de um nao aborte o outro.
+// So lanca erro se TODOS falharem; caso contrario devolve o resumo por destino.
+async function dispatchToWebhooks(payload) {
+  const targets = [
+    { name: 'n8n', url: N8N_WEBHOOK },
+    { name: 'bubble', url: BUBBLE_WEBHOOK },
+  ];
+  const settled = await Promise.allSettled(
+    targets.map(t => postToWebhook(t.url, payload))
+  );
+  const results = targets.map((t, i) => {
+    const s = settled[i];
+    return s.status === 'fulfilled'
+      ? { target: t.name, ok: true, statusCode: s.value.statusCode, url: s.value.url }
+      : { target: t.name, ok: false, error: describeError(s.reason) };
+  });
+  if (results.every(r => !r.ok)) {
+    throw new Error(`Todos os webhooks falharam: ${results.map(r => `${r.target} -> ${r.error}`).join('; ')}`);
+  }
+  return results;
 }
 
 // Marca quando o ultimo envio ao n8n aconteceu (qualquer origem). O watcher usa
@@ -148,7 +175,7 @@ function respondJson(res, statusCode, payload) {
 
 const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/health') {
-    respondJson(res, 200, { ok: true, service: 'sync-api', file: FILE_PATH, webhook: N8N_WEBHOOK });
+    respondJson(res, 200, { ok: true, service: 'sync-api', file: FILE_PATH, webhooks: { n8n: N8N_WEBHOOK, bubble: BUBBLE_WEBHOOK } });
     return;
   }
 
@@ -188,6 +215,7 @@ server.listen(PORT, () => {
   console.log(`sync-api listening on http://localhost:${PORT}`);
   console.log(`watched file: ${FILE_PATH}`);
   console.log(`n8n webhook: ${N8N_WEBHOOK}`);
+  console.log(`bubble webhook: ${BUBBLE_WEBHOOK}`);
 
   // Debounce: o fs.watch do Windows emite varios eventos (rename+change) para a
   // mesma escrita. Guardamos um unico timer e o reiniciamos a cada evento, para
@@ -209,7 +237,7 @@ server.listen(PORT, () => {
       try {
         if (!fs.existsSync(FILE_PATH)) return;
         const result = await dispatchFileToN8N(FILE_PATH, 'file-watch');
-        console.log('dump enviado ao webhook n8n:', result.statusCode);
+        console.log('dump enviado aos webhooks:', JSON.stringify(result));
       } catch (error) {
         console.error('watch trigger failed:', describeError(error));
       }

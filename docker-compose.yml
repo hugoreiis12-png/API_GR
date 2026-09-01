@@ -12,9 +12,10 @@ services:
       # sync-api e fuzzing convivem no mesmo container -> localhost.
       - SYNC_API_URL=http://localhost:3005/dump-ready
       - SYNC_PORT=3005
-      # PRODUCAO: workflow precisa estar Active no n8n. Ajuste o IP se o n8n mudar.
-      # (0.0.0.0 e bind, nao roteavel; use o IP real do host do n8n.)
+      # Dois destinos do POST (disparados em paralelo pelo sync-api).
+      # n8n: workflow precisa estar Active. Ajuste o IP se o n8n mudar.
       - N8N_WEBHOOK_URL=http://192.168.0.231:5678/webhook/af-dump-trigger
+      - BUBBLE_WEBHOOK_URL=https://comprover.bubbleapps.io/version-test/api/1.1/wf/chave_gr/initialize
       # Onde o dump e gravado/lido dentro do container (volume persistente).
       - DUMP_DIR=/app/data
       - CHROME_PATH=/usr/bin/chromium
