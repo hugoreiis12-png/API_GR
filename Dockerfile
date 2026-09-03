@@ -30,17 +30,10 @@ COPY sync-api.js ./
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN npm ci
 
-# Crontab do coletor (formato user-crontab, sem campo de usuario).
-# - PATH/TZ explicitos: o daemon do cron nao herda o ambiente do container.
-# - Todo dia 11:59 (dia-da-semana = *). O envio ao n8n acontece em cadeia: fuzzing.js -> sync-api -> webhook.
-# - flock -n: se a execucao anterior ainda roda, o cron pula (evita sobreposicao).
-RUN printf '%s\n' \
-    'PATH=/usr/local/bin:/usr/bin:/bin' \
-    'TZ=America/Sao_Paulo' \
-    'CHROME_PATH=/usr/bin/chromium' \
-    '59 11 * * * flock -n /tmp/fuzzing.lock -c "cd /app && node fuzzing.js >> /var/log/cron-fuzzing.log 2>&1"' \
-    > /app/crontab.txt \
-    && crontab /app/crontab.txt
+# O crontab NAO e criado aqui: ele e gerado em runtime pelo entrypoint.sh, que
+# injeta o ambiente vivo do container (DUMP_DIR, credenciais, webhooks) — o cron
+# nao herda essas envs sozinho. Ver entrypoint.sh. Coleta diaria 11:59, com
+# flock para nao sobrepor execucoes.
 
 # Criar diretório de logs
 RUN mkdir -p /var/log && touch /var/log/cron-fuzzing.log
