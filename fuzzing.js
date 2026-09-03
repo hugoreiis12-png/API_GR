@@ -9,8 +9,8 @@ const path = require('path');
 const CHROME = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const BASE = "https://ecommerce.grsa.com.br";
 const URL_LOGIN = 'https://ecommerce.grsa.com.br//#/product#Login';
-const EMAIL = 'william.silva@grupocampanha.com.br';
-const PASS = '1234567890';
+const EMAIL = process.env.GRSA_EMAIL || 'william.silva@grupocampanha.com.br';
+const PASS = process.env.GRSA_PASS || '1234567890';
 const ITEMS_PER_PAGE = 40;
 const MAX_PAGES = 500;
 
@@ -126,7 +126,7 @@ function notifySyncApi(filePath) {
     locale: 'pt-BR',
     viewport: { width: 1366, height: 768 }
   });
-  await context.addCookies([{ name: '__goc_session__', value: 'zgyinkpvxsymcsrgykrpbpojrcnmetap', url: BASE }]);
+  await context.addCookies([{ name: '__goc_session__', value: process.env.GRSA_GOC_SESSION || 'zgyinkpvxsymcsrgykrpbpojrcnmetap', url: BASE }]);
   const page = await context.newPage();
 
   // ---- captura token/sessao ----

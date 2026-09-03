@@ -13,7 +13,7 @@ fuzzing.js  ──►  af_full_dump.json  ──►  sync-api.js  ──►  web
 
 ## 1. Pré-requisitos
 
-- **Node.js 18+** (usa `URL`, `fetch` no browser e módulo `http` nativo)
+- **Node.js 20+** (usa `URL`, `fetch` no browser e módulo `http` nativo; Playwright >=1.50 recusa Node 18)
 - **Google Chrome** instalado em `C:\Program Files\Google\Chrome\Application\chrome.exe`
 - **n8n** rodando e acessível na rede (ex.: `http://192.168.0.231:5678`)
 - Acesso à VPN/rede que alcança `https://ecommerce.grsa.com.br`

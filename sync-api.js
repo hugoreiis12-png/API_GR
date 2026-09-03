@@ -3,6 +3,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT = Number(process.env.SYNC_PORT || 3005);
 const FILE_NAME = 'af_full_dump.json';
@@ -13,7 +14,35 @@ const FILE_PATH = path.join(process.env.DUMP_DIR || __dirname, FILE_NAME);
 //  - Bubble: workflow do Bubble (version-test).
 // Cada URL pode ser sobrescrita pela env correspondente.
 const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || 'http://192.168.0.231:5678/webhook/af-dump-trigger';
-const BUBBLE_WEBHOOK = process.env.BUBBLE_WEBHOOK_URL || 'https://comprover.bubbleapps.io/version-test/api/1.1/wf/chave_gr/initialize';
+const BUBBLE_WEBHOOK = process.env.BUBBLE_WEBHOOK_URL || 'https://comprover.bubbleapps.io/api/1.1/wf/chave_gr';
+
+// Gera um JWT (HMAC-SHA256) usando o JWT_SECRET da env. Claims basicos:
+// iss (emissor), iat (emissao), exp (expiracao) + campos extras do payload.
+function generateJWT(extraClaims = {}) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET nao definido');
+
+  const encode = obj => Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const expiryHours = Number(process.env.JWT_EXPIRY_HOURS || 12);
+
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    iss: 'api_gr',
+    iat: now,
+    exp: now + (expiryHours * 3600),
+    ...extraClaims,
+  };
+
+  const encodedHeader = encode(header);
+  const encodedPayload = encode(payload);
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest('base64url');
+
+  return `${encodedHeader}.${encodedPayload}.${signature}`;
+}
 
 // Extrai uma mensagem util de qualquer erro. Em Node moderno, uma falha de
 // conexao vem como AggregateError com .message vazio e os erros reais em
@@ -107,11 +136,12 @@ async function postToWebhook(url, payload) {
     throw new Error(`n8n webhook falhou. producao ${url} -> ${first.statusCode}: ${first.body}; teste ${testUrl} -> ${second.statusCode}: ${second.body}`);
   }
 
-  throw new Error(`n8n webhook status ${first.statusCode} em ${url}: ${first.body}`);
+  throw new Error(`webhook status ${first.statusCode} em ${url}: ${first.body}`);
 }
 
-// Dispara o envio do arquivo JSON para webhook n8n. Se o arquivo nao existir ou nao for JSON valido 
-async function dispatchFileToN8N(filePath = FILE_PATH, source = 'sync-api') {
+// Le o dump JSON e o dispara para os dois webhooks (n8n + Bubble).
+// Lanca se o arquivo nao existir ou nao for JSON valido.
+async function dispatchDump(filePath = FILE_PATH, source = 'sync-api') {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Arquivo não encontrado: ${filePath}`);
   }
@@ -140,16 +170,37 @@ async function dispatchFileToN8N(filePath = FILE_PATH, source = 'sync-api') {
   return result;
 }
 
-// Posta o mesmo payload nos dois webhooks (n8n + Bubble) em paralelo. Cada envio
-// e independente: usa allSettled para que a falha de um nao aborte o outro.
+// Posta o mesmo payload nos dois webhooks (n8n + Bubble) em paralelo. O n8n
+// recebe o payload puro; o Bubble recebe dois campos de auth (ver abaixo).
+// Cada envio e independente: usa allSettled para que a falha de um nao aborte o outro.
 // So lanca erro se TODOS falharem; caso contrario devolve o resumo por destino.
 async function dispatchToWebhooks(payload) {
+  // Gera o JWT assinado (HS256) uma unica vez por dispatch, com data do dump.
+  let jwtToken = null;
+  try {
+    jwtToken = generateJWT({
+      geradoEm: payload.generatedAt || new Date().toISOString(),
+      totalAf: payload.data?.totalAfColetadas || 0,
+    });
+  } catch (err) {
+    console.warn('Aviso: JWT_SECRET nao configurado, enviando sem jwt:', err.message);
+  }
+
+  // Auth do Bubble (Caminho A): a condicao "Only when" do workflow chave_gr
+  // checa `body's jwt contains <JWT_SECRET>`, ou seja, espera o secret em texto
+  // no campo `jwt` (um shared secret, nao a validacao da assinatura). Entao o
+  // campo `jwt` carrega o secret. O token assinado real segue em `jwtAssinado`
+  // para o Caminho B (Bubble passa a validar a assinatura HS256 desse campo).
+  const bubbleBody = { ...payload };
+  if (process.env.JWT_SECRET) bubbleBody.jwt = process.env.JWT_SECRET;
+  if (jwtToken) bubbleBody.jwtAssinado = jwtToken;
+
   const targets = [
-    { name: 'n8n', url: N8N_WEBHOOK },
-    { name: 'bubble', url: BUBBLE_WEBHOOK },
+    { name: 'n8n', url: N8N_WEBHOOK, body: payload },
+    { name: 'bubble', url: BUBBLE_WEBHOOK, body: bubbleBody },
   ];
   const settled = await Promise.allSettled(
-    targets.map(t => postToWebhook(t.url, payload))
+    targets.map(t => postToWebhook(t.url, t.body))
   );
   const results = targets.map((t, i) => {
     const s = settled[i];
@@ -168,6 +219,7 @@ async function dispatchToWebhooks(payload) {
 let lastDispatchAt = 0;
 const WATCH_COOLDOWN_MS = 5000;
 
+
 function respondJson(res, statusCode, payload) {
   res.writeHead(statusCode, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(payload));
@@ -179,7 +231,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/dump-ready') {
+   if (req.method === 'POST' && req.url === '/dump-ready') {
     let body = '';
     req.on('data', chunk => {
       body += chunk.toString();
@@ -188,9 +240,9 @@ const server = http.createServer(async (req, res) => {
     req.on('end', async () => {
       try {
         const parsed = body ? JSON.parse(body) : {};
-        const filePath = parsed.filePath || FILE_PATH;
-        const result = await dispatchFileToN8N(filePath, parsed.source || 'fuzzing.js');
-        respondJson(res, 200, { ok: true, message: 'Arquivo enviado ao n8n', result });
+        // Segurança: ignora qualquer filePath vindo do cliente (evita ler e exfiltrar arquivos arbitrarios)
+        const result = await dispatchDump(FILE_PATH, parsed.source || 'fuzzing.js');
+        respondJson(res, 200, { ok: true, message: 'Dump enviado aos webhooks', result });
       } catch (error) {
         respondJson(res, 500, { ok: false, message: describeError(error) });
       }
@@ -200,7 +252,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && req.url === '/trigger') {
     try {
-      const result = await dispatchFileToN8N(FILE_PATH, 'manual-trigger');
+      const result = await dispatchDump(FILE_PATH, 'manual-trigger');
       respondJson(res, 200, { ok: true, message: 'Workflow disparado via webhook', result });
     } catch (error) {
       respondJson(res, 500, { ok: false, message: describeError(error) });
@@ -221,7 +273,8 @@ server.listen(PORT, () => {
   // mesma escrita. Guardamos um unico timer e o reiniciamos a cada evento, para
   // enviar o dump so uma vez, ~800ms depois do arquivo estabilizar.
   let watchTimer = null;
-  fs.watch(__dirname, { persistent: true }, (eventType, filename) => {
+  // Observa a pasta real do dump (DUMP DIR quando definido; senao a raiz )
+  fs.watch(path.dirname(FILE_PATH), { persistent: true }, (eventType, filename) => {
     if (filename !== FILE_NAME) return;
     if (eventType !== 'rename' && eventType !== 'change') return;
 
@@ -236,7 +289,7 @@ server.listen(PORT, () => {
       }
       try {
         if (!fs.existsSync(FILE_PATH)) return;
-        const result = await dispatchFileToN8N(FILE_PATH, 'file-watch');
+        const result = await dispatchDump(FILE_PATH, 'file-watch');
         console.log('dump enviado aos webhooks:', JSON.stringify(result));
       } catch (error) {
         console.error('watch trigger failed:', describeError(error));

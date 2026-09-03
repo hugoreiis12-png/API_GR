@@ -28,7 +28,7 @@ COPY sync-api.js ./
 # Instalar dependências Node. Usamos o chromium do sistema via playwright-core,
 # entao pulamos o download dos navegadores do Playwright (build mais leve).
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN npm install
+RUN npm ci
 
 # Crontab do coletor (formato user-crontab, sem campo de usuario).
 # - PATH/TZ explicitos: o daemon do cron nao herda o ambiente do container.
