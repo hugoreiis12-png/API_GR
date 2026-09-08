@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "devDependencies": {
-    "playwright": "^1.62.1"
+  "dependencies": {
+    "playwright-core": "^1.62.1"
   }
 }
