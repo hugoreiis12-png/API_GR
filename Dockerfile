@@ -1,6 +1,8 @@
 # Dockerfile para API_GR: Node 20 + Chromium do sistema (via playwright-core).
 # Node 20+ e obrigatorio: o Playwright (>=1.50) recusa rodar no Node 18.
-FROM node:20-bullseye
+# Base bookworm (Debian 12): o pacote chromium do bullseye e instavel e o
+# apt-get install falha com frequencia (exit 100). No bookworm ele instala limpo.
+FROM node:20-bookworm
 
 WORKDIR /app
 
@@ -11,7 +13,9 @@ ENV CHROME_PATH=/usr/bin/chromium
 
 # Chromium do sistema + tzdata. Usamos o chromium do sistema via playwright-core,
 # entao NAO baixamos os navegadores do Playwright (build mais leve).
-RUN apt-get update && apt-get install -y \
+# --no-install-recommends evita puxar dezenas de pacotes opcionais (build menor
+# e menos chance de uma dependencia recomendada quebrar o apt).
+RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     tzdata \
     ca-certificates \
