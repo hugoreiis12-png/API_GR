@@ -4,6 +4,27 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const https = require('https');
+const crypto = require('crypto');
+
+// Gera um JWT (HMAC-SHA256) igual ao do sync-api, para o envio DIRETO ao Bubble
+// (modo container/manual) sair assinado do mesmo jeito que o fluxo via sync-api.
+// Sem JWT_SECRET devolve null (o envio segue sem jwt, comportamento antigo).
+function generateJWT(extraClaims = {}) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  const encode = obj => Buffer.from(JSON.stringify(obj)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const expiryHours = Number(process.env.JWT_EXPIRY_HOURS || 12);
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = { iss: 'api_gr', iat: now, exp: now + (expiryHours * 3600), ...extraClaims };
+  const encodedHeader = encode(header);
+  const encodedPayload = encode(payload);
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest('base64url');
+  return `${encodedHeader}.${encodedPayload}.${signature}`;
+}
 
 // Caminho do Chrome: env CHROME_PATH tem prioridade; no Windows usa o Chrome local;
 // no Linux/container usa o chromium empacotado pelo Playwright.
@@ -172,19 +193,30 @@ function postDumpToN8N(filePath, dump) {
   });
 }
 
-// Envia o dump ao webhook LIVE do Bubble (workflow chave_gr). Mesmo payload do n8n.
-// Adicional e independente: nao interfere no envio ao n8n.
+// Envia o dump ao webhook LIVE do Bubble (workflow chave_gr).
+// Assina igual ao sync-api: campo `jwt` (segredo em texto, checado pelo "Only when"
+// do Bubble), campo `jwtAssinado` (token HS256) e header Authorization: Bearer.
+// Sem JWT_SECRET, segue sem jwt (comportamento antigo). Independente do envio ao n8n.
 function postDumpToBubble(filePath, dump) {
   return new Promise((resolve, reject) => {
     const stat = fs.statSync(filePath);
-    const payload = JSON.stringify({
+    const generatedAt = new Date().toISOString();
+    const jwtToken = generateJWT({
+      geradoEm: generatedAt,
+      totalAf: dump.totalAfNaoCanceladas || 0,
+    });
+
+    const bodyObj = {
       source: 'fuzzing.js',
       fileName: path.basename(filePath),
       filePath,
       sizeBytes: stat.size,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       data: dump
-    });
+    };
+    if (process.env.JWT_SECRET) bodyObj.jwt = process.env.JWT_SECRET;
+    if (jwtToken) bodyObj.jwtAssinado = jwtToken;
+    const payload = JSON.stringify(bodyObj);
 
     const url = new URL(BUBBLE_WEBHOOK_URL);
     const client = url.protocol === 'https:' ? https : http;
@@ -196,7 +228,8 @@ function postDumpToBubble(filePath, dump) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload)
+        'Content-Length': Buffer.byteLength(payload),
+        ...(jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {})
       }
     }, (res) => {
       let body = '';
