@@ -10,8 +10,18 @@ services:
     shm_size: "1gb"
     environment:
       TZ: America/Sao_Paulo
-      # URL de PRODUCAO do webhook (o workflow n8n precisa estar ATIVO).
+      # Destino n8n (PRODUCAO, workflow ATIVO). Consumido pelo SYNC-API: o
+      # entrypoint entrega esta URL ao sync-api e a remove do ambiente do
+      # fuzzing, para o fuzzing ir pela rota do sync-api (onde o Bubble e
+      # assinado com JWT). NAO defina isto esperando que o fuzzing use direto.
       N8N_WEBHOOK_URL: "http://192.168.0.231:5678/webhook/af-dump-trigger"
+      # Segredo que assina o POST ao Bubble (header Authorization: Bearer <jwt>).
+      # Defina o valor no Portainer (Stack -> Environment variables); nao commite.
+      JWT_SECRET: "${JWT_SECRET}"
+      # Endpoint LIVE do Bubble (opcional; o default ja aponta para chave_gr).
+      # BUBBLE_WEBHOOK_URL: "https://comprover.bubbleapps.io/api/1.1/wf/chave_gr"
+      # Validade do JWT em horas (opcional; default 12).
+      # JWT_EXPIRY_HOURS: "12"
       # Janela de datas (opcional): vazio = hoje; dias somados ao inicio.
       # RANGE_START: ""
       RANGE_DAYS: "6"

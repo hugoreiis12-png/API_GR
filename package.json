@@ -1,17 +1,16 @@
 {
   "name": "api_gr",
   "version": "1.0.0",
-  "description": "Coleta de AFs (GRSA) e envio ao webhook n8n",
+  "description": "",
   "main": "fuzzing.js",
   "scripts": {
-    "fuzz": "node fuzzing.js",
-    "sync": "node sync-api.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "dependencies": {
-    "playwright-core": "^1.62.1"
+  "devDependencies": {
+    "playwright": "^1.62.1"
   }
 }
