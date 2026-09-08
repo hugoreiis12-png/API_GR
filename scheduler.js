@@ -1,11 +1,11 @@
 // Agendador em Node puro (sem binario externo). Dispara o fuzzing.js no horario
-// alvo, de segunda a sexta, usando o fuso definido por TZ no container.
+// alvo, todos os dias (seg a dom), usando o fuso definido por TZ no container.
 const { spawn } = require('child_process');
 const path = require('path');
 
 const HH = Number(process.env.CRON_HOUR || 11);
-const MM = Number(process.env.CRON_MINUTE || 57);
-const DAYS = [1, 2, 3, 4, 5]; // getDay(): 0=domingo ... 6=sabado -> seg a sex
+const MM = Number(process.env.CRON_MINUTE || 59);
+const DAYS = [0, 1, 2, 3, 4, 5, 6]; // getDay(): 0=domingo ... 6=sabado -> todo dia
 
 function log(...args) {
   console.log(new Date().toISOString(), ...args);
@@ -41,7 +41,7 @@ function scheduleNext() {
 }
 
 const alvo = `${String(HH).padStart(2, '0')}:${String(MM).padStart(2, '0')}`;
-log(`scheduler ativo | alvo ${alvo} seg-sex | TZ=${process.env.TZ || '(host)'} | agora=${new Date().toString()}`);
+log(`scheduler ativo | alvo ${alvo} todo dia | TZ=${process.env.TZ || '(host)'} | agora=${new Date().toString()}`);
 
 // RUN_ON_START=1 executa uma vez ao subir (util para testar sem esperar o horario).
 if (process.env.RUN_ON_START === '1') runFuzzing();

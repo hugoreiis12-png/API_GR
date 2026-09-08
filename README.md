@@ -15,7 +15,7 @@ A coleta pode ser disparada de duas formas:
 
 - **Manual / desktop** — você roda `sync-api.js` e `fuzzing.js` à mão (Windows).
 - **Automatizada / container** — o `scheduler.js` dispara o `fuzzing.js` de
-  segunda a sexta no horário configurado, dentro do Docker (Portainer).
+  todo dia (seg a dom) no horário configurado, dentro do Docker (Portainer).
 
 ---
 
@@ -61,8 +61,8 @@ A coleta pode ser disparada de duas formas:
 
 ### `scheduler.js` — agendador (Node puro, usado no container)
 
-- Dispara o `fuzzing.js` de **segunda a sexta** no horário `CRON_HOUR:CRON_MINUTE`
-  (default **11:57**), respeitando o fuso `TZ`.
+- Dispara o `fuzzing.js` **todo dia (seg a dom)** no horário `CRON_HOUR:CRON_MINUTE`
+  (default **11:59**), respeitando o fuso `TZ`.
 - Sem dependência de cron externo; calcula o próximo horário útil e reagenda.
 - `RUN_ON_START=1` executa uma vez assim que o container sobe (para testar).
 
@@ -85,7 +85,7 @@ A coleta pode ser disparada de duas formas:
 | --------------------- | ---------------------------------------------------------------------- |
 | `fuzzing.js`          | Login + paginação da API `autoForne`, gera `af_full_dump.json` e dispara o envio. |
 | `sync-api.js`         | Servidor HTTP (porta 3005): lê o dump e faz POST para n8n + Bubble (JWT). |
-| `scheduler.js`        | Agendador (seg–sex, horário configurável) que roda o `fuzzing.js`.     |
+| `scheduler.js`        | Agendador (todo dia, horário configurável) que roda o `fuzzing.js`.    |
 | `entrypoint.sh`       | Entrypoint do container: sobe o `sync-api` (background) + `scheduler` (foreground). |
 | `Dockerfile`          | Imagem Node 20 + Chromium do sistema.                                  |
 | `docker-compose.yml`  | Stack para deploy no Portainer.                                        |
@@ -114,7 +114,7 @@ necessário para o envio assinado ao Bubble.
 | `RANGE_DAYS`        | `fuzzing`           | `6` (janela = hoje + 6 dias = 7 dias corridos)                |
 | `DATE_FORMAT`       | `fuzzing`           | `br` (`DD/MM/YYYY`) — ou `iso` (`YYYY-MM-DD`)                  |
 | `DATE_OPERATOR`     | `fuzzing`           | `BETWEEN`                                                     |
-| `CRON_HOUR` / `CRON_MINUTE` | `scheduler` | `11` / `57`                                                  |
+| `CRON_HOUR` / `CRON_MINUTE` | `scheduler` | `11` / `59`                                                  |
 | `RUN_ON_START`      | `scheduler`         | *(vazio; `1` roda uma vez ao subir)*                          |
 | `TZ`                | container           | `America/Sao_Paulo`                                           |
 
@@ -182,7 +182,7 @@ Fluxo: login → paginação das AFs → grava `af_full_dump.json` → chama o
 
 O `docker-compose.yml` builda a imagem a partir do `Dockerfile` e sobe um
 container que roda **sync-api + scheduler** juntos (via `entrypoint.sh`). A
-coleta acontece sozinha de seg a sex no horário configurado.
+coleta acontece sozinha todo dia (seg a dom) no horário configurado.
 
 ```bash
 docker compose up -d --build
