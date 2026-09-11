@@ -87,18 +87,21 @@ const { ini: DATE_INI, fim: DATE_FIM } = computeDateRange(RANGE_START, RANGE_DAY
 console.log(`  filtro de data (${DATE_FIELD}): ${DATE_INI} -> ${DATE_FIM} [op=${DATE_OPERATOR}, fmt=${DATE_FORMAT}]`);
 
 // ---- filtro: data (intervalo) + nao-canceladas ----
+// STATUS via env STATUS_VALUES (default "Y" conforme selecao Disponivel/Lido).
+// Ex.: STATUS_VALUES=N,S ou STATUS_VALUES=Y
+const STATUS_VALUES = (process.env.STATUS_VALUES || 'Y').split(',').map(s => s.trim()).filter(Boolean);
 const FILTER = [
   { name: DATE_FIELD, value: [DATE_INI, DATE_FIM], operator: DATE_OPERATOR, isCustomFilter: true },
-  { name: "STATUS", value: ["N"], operator: "IN", isCustomFilter: true },
+  { name: "STATUS", value: STATUS_VALUES, operator: "IN", isCustomFilter: true },
   { name: "IDSITUATENDIMENTOAF", value: ["N"], operator: "IN", isCustomFilter: true },
   { name: "AFCANCELADA", value: ["N"], operator: "IN", isCustomFilter: true }
 ];
 const SYNC_API_URL = process.env.SYNC_API_URL || 'http://localhost:3005/dump-ready';
 const ORIGIN = {
   containerName: "AutorizacaoFornecimento",
-  widgetName: "zhFilterPreferencesSelectConditions",
+  widgetName: "autoForne",
   containerLabel: "Autorização de Fornecimento",
-  widgetLabel: "Filtro"
+  widgetLabel: "Autorização de Fornecimento"
 };
 
 function buildBody(page, filter = FILTER) {

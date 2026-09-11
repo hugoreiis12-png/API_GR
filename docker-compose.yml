@@ -1,33 +1,57 @@
-# Stack para o Portainer (deploy via Git). Portainer builda a imagem a partir
-# do Dockerfile deste repositorio e sobe o container com o agendador.
+version: '3.8'
+
 services:
   api-gr:
-    build: .
-    image: api-gr:latest
-    container_name: api-gr
-    restart: unless-stopped
-    # O Chromium trava com o /dev/shm padrao do Docker (64MB); ampliamos.
-    shm_size: "1gb"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-gr-collector
+    ports:
+      - "3005:3005"
+
+    # Sem env_file: o Compose ja carrega um .env da pasta do projeto para
+    # interpolar ${VAR} abaixo. Assim o deploy NAO quebra quando nao ha .env
+    # (ex.: stack criado direto do Git no Portainer) — os defaults reproduzem o
+    # comportamento validado, e o Portainer pode sobrescrever via "Environment
+    # variables" do stack.
     environment:
-      TZ: America/Sao_Paulo
-      # Destino n8n (PRODUCAO, workflow ATIVO). Consumido pelo SYNC-API: o
-      # entrypoint entrega esta URL ao sync-api e a remove do ambiente do
-      # fuzzing, para o fuzzing ir pela rota do sync-api (onde o Bubble e
-      # assinado com JWT). NAO defina isto esperando que o fuzzing use direto.
-      N8N_WEBHOOK_URL: "http://192.168.0.231:5678/webhook/af-dump-trigger"
-      # Segredo que assina o POST ao Bubble (header Authorization: Bearer <jwt>).
-      # Defina o valor no Portainer (Stack -> Environment variables); nao commite.
-      JWT_SECRET: "${JWT_SECRET}"
-      # Endpoint LIVE do Bubble (opcional; o default ja aponta para chave_gr).
-      # BUBBLE_WEBHOOK_URL: "https://comprover.bubbleapps.io/api/1.1/wf/chave_gr"
-      # Validade do JWT em horas (opcional; default 12).
-      # JWT_EXPIRY_HOURS: "12"
-      # Janela de datas (opcional): vazio = hoje; dias somados ao inicio.
-      # RANGE_START: ""
-      RANGE_DAYS: "6"
-      # Horario do agendamento (default 11:59). Todo dia (seg-dom) no scheduler.js.
-      CRON_HOUR: "11"
-      CRON_MINUTE: "59"
-      # RUN_ON_START=1 roda UMA vez assim que o container sobe (util p/ testar).
-      # Deixe comentado em producao para nao disparar fora do horario.
-      # RUN_ON_START: "1"
+      # --- Segredos/credenciais: defina no Portainer. Vazio = usa o default. ---
+      # Credenciais GRSA: se vazias, o fuzzing.js cai nos defaults embutidos.
+      - GRSA_EMAIL=${GRSA_EMAIL:-}
+      - GRSA_PASS=${GRSA_PASS:-}
+      - GRSA_GOC_SESSION=${GRSA_GOC_SESSION:-}
+      # Segredo do JWT p/ auth do Bubble (workflow chave_gr). Sem ele, o sync-api
+      # envia ao Bubble sem o campo jwt (o "Only when" do workflow nao bate).
+      - JWT_SECRET=${JWT_SECRET:-}
+      - JWT_EXPIRY_HOURS=${JWT_EXPIRY_HOURS:-12}
+      # --- Runtime (defaults reproduzem o ambiente do container validado) ---
+      # sync-api e fuzzing convivem no mesmo container -> localhost.
+      - SYNC_API_URL=http://localhost:3005/dump-ready
+      - SYNC_PORT=3005
+      # Dois destinos do POST (disparados em paralelo pelo sync-api).
+      # n8n: workflow precisa estar Active. Ajuste o IP se o n8n mudar.
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://192.168.0.231:5678/webhook/af-dump-trigger}
+      # Bubble: workflow precisa estar Active. Ajuste o URL se o Bubble mudar.
+      - BUBBLE_WEBHOOK_URL=${BUBBLE_WEBHOOK_URL:-https://comprover.bubbleapps.io/api/1.1/wf/chave_gr}
+      # Onde o dump e gravado/lido dentro do container (volume persistente).
+      - DUMP_DIR=/app/data
+      - CHROME_PATH=/usr/bin/chromium
+      - TZ=America/Sao_Paulo
+      # Rodar a coleta uma vez ao subir o container (alem do cron das 11:59).
+      # Util p/ validar o deploy no Portainer sem esperar o horario. Default: nao.
+      - RUN_ON_START=${RUN_ON_START:-false}
+    volumes:
+      # Volumes nomeados: evitam o problema de bind-mount de arquivo unico no Portainer.
+      - af-dump:/app/data
+      - cron-logs:/var/log
+    restart: unless-stopped
+    networks:
+      - api-network
+
+volumes:
+  af-dump:
+  cron-logs:
+
+networks:
+  api-network:
+    driver: bridge
