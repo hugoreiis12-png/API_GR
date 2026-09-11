@@ -37,6 +37,9 @@ services:
       - DUMP_DIR=/app/data
       - CHROME_PATH=/usr/bin/chromium
       - TZ=America/Sao_Paulo
+      # Horario da coleta diaria (respeitado pelo entrypoint.sh).
+      - CRON_HOUR=${CRON_HOUR:-11}
+      - CRON_MINUTE=${CRON_MINUTE:-59}
       # Rodar a coleta uma vez ao subir o container (alem do cron das 11:59).
       # Util p/ validar o deploy no Portainer sem esperar o horario. Default: nao.
       - RUN_ON_START=${RUN_ON_START:-false}

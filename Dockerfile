@@ -17,6 +17,7 @@ ENV CHROME_PATH=/usr/bin/chromium
 # e menos chance de uma dependencia recomendada quebrar o apt).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
+    cron \
     tzdata \
     ca-certificates \
     && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
