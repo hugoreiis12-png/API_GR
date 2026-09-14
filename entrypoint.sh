@@ -2,18 +2,21 @@
 set -e
 
 LOG=/var/log/cron-fuzzing.log
-mkdir -p /var/log
+mkdir -p /var/log /app/data
 touch "$LOG"
 
 # O daemon do cron NAO herda o ambiente do container. Sem isto, a coleta agendada
-# rodaria sem DUMP_DIR/credenciais: gravaria o dump em /app (nao no volume
-# /app/data) e o sync-api nunca acharia o arquivo -> nada iria aos webhooks.
+# rodaria sem DUMP_DIR/credenciais/filtros: gravaria o dump em /app (nao no volume
+# /app/data) e o sync-api nunca acharia o arquivo -> 500 "Arquivo nao encontrado".
 # Solucao: gerar o crontab em runtime injetando as envs vivas do container como
 # linhas NAME=value (o cron as aplica a cada job). Assim o run agendado usa o
 # MESMO ambiente do sync-api e da execucao manual -> mesmo resultado.
+# Inclui GR_ (legado) + filtros RANGE_/DATE_/STATUS_ que antes ficavam de fora.
+# Zera N8N_/BUBBLE_ no job para forcar o modo centralizado via sync-api (com JWT
+# e fallback /webhook-test/); o sync-api segue com os valores reais.
 {
-  printenv | grep -E '^(GRSA_|JWT_|N8N_|BUBBLE_|SYNC_API_URL|SYNC_PORT|DUMP_DIR|CHROME_PATH|TZ|PATH)=' || true
-  echo "${CRON_MINUTE:-59} ${CRON_HOUR:-11} * * * flock -n /tmp/fuzzing.lock -c \"cd /app && node fuzzing.js >> $LOG 2>&1\""
+  printenv | grep -E '^(GRSA_|GR_|JWT_|N8N_|BUBBLE_|SYNC_API_URL|SYNC_PORT|DUMP_DIR|CHROME_PATH|TZ|PATH|RANGE_|DATE_|STATUS_)=' || true
+  echo "${CRON_MINUTE:-59} ${CRON_HOUR:-11} * * * flock -n /tmp/fuzzing.lock -c \"cd /app && N8N_WEBHOOK_URL= BUBBLE_WEBHOOK_URL= node fuzzing.js >> $LOG 2>&1\""
 } > /app/crontab.txt
 if ! command -v crontab >/dev/null 2>&1; then
   echo "ERRO: 'crontab' nao encontrado. Rebuild a imagem com o Dockerfile atual (apt-get install cron)." >&2
@@ -31,7 +34,7 @@ node /app/sync-api.js &
 # background e NAO derruba o container se a coleta falhar.
 if [ "${RUN_ON_START:-}" = "1" ] || [ "${RUN_ON_START:-}" = "true" ]; then
   echo "[$(date '+%Y-%m-%d %H:%M:%S %Z')] RUN_ON_START=${RUN_ON_START} -> coleta inicial em ~5s..."
-  ( sleep 5; cd /app && node fuzzing.js >> "$LOG" 2>&1 || echo "[on-start] fuzzing.js falhou (ver log acima)" ) &
+  ( sleep 5; cd /app && N8N_WEBHOOK_URL= BUBBLE_WEBHOOK_URL= node fuzzing.js >> "$LOG" 2>&1 || echo "[on-start] fuzzing.js finalizou com codigo $? (2 = janela sem AFs, envio bloqueado; ver log acima)" ) &
 fi
 
 # Espelha o log do cron no stdout do container para aparecer no docker logs / Portainer.

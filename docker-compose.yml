@@ -6,8 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: api-gr-collector
+    # /dev/shm padrao de 64MB trava o Chromium no container (target largado).
+    shm_size: "1gb"
     ports:
       - "3005:3005"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3005/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
     # Sem env_file: o Compose ja carrega um .env da pasta do projeto para
     # interpolar ${VAR} abaixo. Assim o deploy NAO quebra quando nao ha .env

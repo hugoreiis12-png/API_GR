@@ -36,6 +36,6 @@ RUN sed -i 's/\r$//' /app/entrypoint.sh
 # Porta do sync-api (uso interno; exposta para debug/health).
 EXPOSE 3005
 
-# Sobe sync-api (n8n + Bubble com JWT) em background + scheduler em foreground.
+# Sobe sync-api (n8n + Bubble com JWT) em background + cron em foreground.
 # O fuzzing vai pela rota do sync-api, entao o Bubble sai assinado -- igual ao local.
 CMD ["sh", "/app/entrypoint.sh"]

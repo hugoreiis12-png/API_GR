@@ -144,7 +144,7 @@ async function postToWebhook(url, payload, extraHeaders = {}) {
 // Lanca se o arquivo nao existir ou nao for JSON valido.
 async function dispatchDump(filePath = FILE_PATH, source = 'sync-api') {
   if (!fs.existsSync(filePath)) {
-    throw new Error(`Arquivo não encontrado: ${filePath}`);
+    throw new Error(`Arquivo não encontrado: ${filePath} (DUMP_DIR=${process.env.DUMP_DIR || '(raiz do projeto)'}; o fuzzing.js deve gravar no mesmo DUMP_DIR)`);
   }
 
   const stat = fs.statSync(filePath);
@@ -177,11 +177,12 @@ async function dispatchDump(filePath = FILE_PATH, source = 'sync-api') {
 // So lanca erro se TODOS falharem; caso contrario devolve o resumo por destino.
 async function dispatchToWebhooks(payload) {
   // Gera o JWT assinado (HS256) uma unica vez por dispatch, com data do dump.
+  // Campo canonico: totalAfNaoCanceladas (fallback para totalAfColetadas legado).
   let jwtToken = null;
   try {
     jwtToken = generateJWT({
       geradoEm: payload.generatedAt || new Date().toISOString(),
-      totalAf: payload.data?.totalAfColetadas || 0,
+      totalAf: payload.data?.totalAfNaoCanceladas ?? payload.data?.totalAfColetadas ?? 0,
     });
   } catch (err) {
     console.warn('Aviso: JWT_SECRET nao configurado, enviando sem jwt:', err.message);
@@ -275,33 +276,45 @@ server.listen(PORT, () => {
   console.log(`n8n webhook: ${N8N_WEBHOOK}`);
   console.log(`bubble webhook: ${BUBBLE_WEBHOOK}`);
 
+  // Garante que a pasta do dump existe antes do fs.watch (volume novo no
+  // Portainer vinha vazio e o watch estourava ENOENT, matando o sync-api).
+  try {
+    fs.mkdirSync(path.dirname(FILE_PATH), { recursive: true });
+  } catch (err) {
+    console.error('nao foi possivel criar pasta do dump:', describeError(err));
+  }
+
   // Debounce: o fs.watch do Windows emite varios eventos (rename+change) para a
   // mesma escrita. Guardamos um unico timer e o reiniciamos a cada evento, para
   // enviar o dump so uma vez, ~800ms depois do arquivo estabilizar.
   let watchTimer = null;
   // Observa a pasta real do dump (DUMP DIR quando definido; senao a raiz )
-  fs.watch(path.dirname(FILE_PATH), { persistent: true }, (eventType, filename) => {
-    if (filename !== FILE_NAME) return;
-    if (eventType !== 'rename' && eventType !== 'change') return;
+  try {
+    fs.watch(path.dirname(FILE_PATH), { persistent: true }, (eventType, filename) => {
+      if (filename !== FILE_NAME) return;
+      if (eventType !== 'rename' && eventType !== 'change') return;
 
-    if (watchTimer) clearTimeout(watchTimer);
-    watchTimer = setTimeout(async () => {
-      watchTimer = null;
-      // Se o fuzzing.js ja disparou via /dump-ready ha pouco, nao reenvia o
-      // mesmo dump (evita execucao duplicada e o 2o hit na URL de teste do n8n).
-      if (Date.now() - lastDispatchAt < WATCH_COOLDOWN_MS) {
-        console.log('watch: envio recente via /dump-ready, pulando reenvio.');
-        return;
-      }
-      try {
-        if (!fs.existsSync(FILE_PATH)) return;
-        const result = await dispatchDump(FILE_PATH, 'file-watch');
-        console.log('dump enviado aos webhooks:', JSON.stringify(result));
-      } catch (error) {
-        console.error('watch trigger failed:', describeError(error));
-      }
-    }, 800);
-  });
+      if (watchTimer) clearTimeout(watchTimer);
+      watchTimer = setTimeout(async () => {
+        watchTimer = null;
+        // Se o fuzzing.js ja disparou via /dump-ready ha pouco, nao reenvia o
+        // mesmo dump (evita execucao duplicada e o 2o hit na URL de teste do n8n).
+        if (Date.now() - lastDispatchAt < WATCH_COOLDOWN_MS) {
+          console.log('watch: envio recente via /dump-ready, pulando reenvio.');
+          return;
+        }
+        try {
+          if (!fs.existsSync(FILE_PATH)) return;
+          const result = await dispatchDump(FILE_PATH, 'file-watch');
+          console.log('dump enviado aos webhooks:', JSON.stringify(result));
+        } catch (error) {
+          console.error('watch trigger failed:', describeError(error));
+        }
+      }, 800);
+    });
+  } catch (err) {
+    console.error('fs.watch indisponivel (envio via /dump-ready e /trigger continua ok):', describeError(err));
+  }
 });
 
 process.on('SIGINT', () => {

@@ -32,17 +32,24 @@ const CHROME = process.env.CHROME_PATH
   || (process.platform === 'win32'
     ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
     : chromium.executablePath());
-// Se definido, o dump e enviado DIRETO ao webhook n8n (modo container/cron),
-// sem depender do sync-api. Caso contrario, notifica o sync-api (modo desktop).
+// Envio centralizado no sync-api por padrao. N8N_WEBHOOK_URL/BUBBLE_WEBHOOK_URL
+// so sao usados como FALLBACK direto se o sync-api estiver fora do ar.
+// No container o cron zera essas vars para forcar o caminho via sync-api (com JWT).
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL || '';
 // Endpoint LIVE do Bubble (workflow chave_gr). Disparado ADICIONALMENTE ao n8n no
 // modo direto, sem alterar o envio existente. Vazio desativa o envio ao Bubble.
 const BUBBLE_WEBHOOK_URL = process.env.BUBBLE_WEBHOOK_URL || 'https://comprover.bubbleapps.io/api/1.1/wf/chave_gr';
 const BASE = "https://ecommerce.grsa.com.br";
 const URL_LOGIN = 'https://ecommerce.grsa.com.br//#/product#Login';
-// Prefira definir GR_EMAIL / GR_PASS via ambiente (Portainer) e remover os defaults.
-const EMAIL = process.env.GR_EMAIL || 'william.silva@grupocampanha.com.br';
-const PASS = process.env.GR_PASS || '1234567890';
+// Credenciais: aceita GRSA_* (compose/Portainer) com fallback para GR_* (legado/desktop).
+// Vazias no compose = cai nos defaults embutidos (apenas dev local).
+const EMAIL = process.env.GRSA_EMAIL || process.env.GR_EMAIL || 'william.silva@grupocampanha.com.br';
+const PASS = process.env.GRSA_PASS || process.env.GR_PASS || '1234567890';
+const GOC_SESSION = process.env.GRSA_GOC_SESSION || 'zgyinkpvxsymcsrgykrpbpojrcnmetap';
+// Dump: respeita DUMP_DIR (volume /app/data no container) igual ao sync-api.
+// Sem DUMP_DIR = raiz do projeto (dev local).
+const DUMP_DIR = process.env.DUMP_DIR || __dirname;
+const DUMP_FILE = 'af_full_dump.json';
 const ITEMS_PER_PAGE = 40;
 const MAX_PAGES = 500;
 
@@ -96,6 +103,7 @@ const FILTER = [
   { name: "IDSITUATENDIMENTOAF", value: ["N"], operator: "IN", isCustomFilter: true },
   { name: "AFCANCELADA", value: ["N"], operator: "IN", isCustomFilter: true }
 ];
+console.log(`  filtro STATUS=${STATUS_VALUES.join(',')} IDSITUATENDIMENTOAF=N AFCANCELADA=N [DUMP_DIR=${DUMP_DIR}]`);
 const SYNC_API_URL = process.env.SYNC_API_URL || 'http://localhost:3005/dump-ready';
 const ORIGIN = {
   containerName: "AutorizacaoFornecimento",
@@ -263,7 +271,7 @@ function postDumpToBubble(filePath, dump) {
     locale: 'pt-BR',
     viewport: { width: 1366, height: 768 }
   });
-  await context.addCookies([{ name: '__goc_session__', value: 'zgyinkpvxsymcsrgykrpbpojrcnmetap', url: BASE }]);
+  await context.addCookies([{ name: '__goc_session__', value: GOC_SESSION, url: BASE }]);
   const page = await context.newPage();
 
   // ---- captura token/sessao ----
@@ -368,31 +376,49 @@ function postDumpToBubble(filePath, dump) {
     sessao: sessionFinal,
     requestsReaisCapturadosDuranteRuntime: realRunRequests
   };
-  const dumpPath = path.join(__dirname, 'af_full_dump.json');
+  const dumpPath = path.join(DUMP_DIR, DUMP_FILE);
+  fs.mkdirSync(path.dirname(dumpPath), { recursive: true });
   fs.writeFileSync(dumpPath, JSON.stringify(dump, null, 2), 'utf8');
-  console.log('  FULL DUMP salvo: af_full_dump.json (', fs.statSync(dumpPath).size, 'bytes )');
+  console.log(`  FULL DUMP salvo: ${dumpPath} (`, fs.statSync(dumpPath).size, 'bytes )');
+  console.log(`  DUMP_DIR=${DUMP_DIR}`);
 
-  try {
-    if (N8N_WEBHOOK_URL) {
-      const r = await postDumpToN8N(dumpPath, dump);
-      console.log('  n8n webhook ->', r.statusCode, r.body);
-    } else {
-      const syncResult = await notifySyncApi(dumpPath);
-      console.log('  sync-api ->', syncResult.statusCode, syncResult.body);
-    }
-  } catch (error) {
-    console.warn('  envio do dump falhou:', error.message);
+  // Politica anti-vazio: 0 AFs nao e enviado (vira exit 2 para o cron/log destacar).
+  // Mantem STATUS=Y como canonico; vazio significa janela sem dado, nao erro de API.
+  if (allRows.length === 0) {
+    console.warn('  NENHUMA AF na janela — bloqueando envio a n8n/Bubble (dump vazio preservado para debug).');
+    await browser.close();
+    process.exit(2);
   }
 
-  // ADITIVO: no modo direto (mesmo gatilho do n8n) envia tambem ao Bubble (live).
-  // Independente do envio acima; uma falha aqui nao interrompe o fluxo. No modo
-  // sync-api (sem N8N_WEBHOOK_URL) o proprio sync-api ja cuida do Bubble.
-  if (N8N_WEBHOOK_URL && BUBBLE_WEBHOOK_URL) {
+  // Modo centralizado: tenta sempre o sync-api primeiro (ele envia a n8n + Bubble
+  // com JWT e fallback /webhook-test/). O envio DIRETO so entra como fallback se
+  // o sync-api estiver fora do ar e N8N_WEBHOOK_URL estiver definida (desktop sem
+  // sync-api). No container o cron zera N8N/BUBBLE_URL para forcar este caminho.
+  let viaSyncOk = false;
+  try {
+    const syncResult = await notifySyncApi(dumpPath);
+    console.log('  sync-api ->', syncResult.statusCode, syncResult.body);
+    viaSyncOk = true;
+  } catch (error) {
+    console.warn('  sync-api indisponivel, tentando fallback direto:', error.message);
+  }
+
+  if (!viaSyncOk && N8N_WEBHOOK_URL) {
     try {
-      const b = await postDumpToBubble(dumpPath, dump);
-      console.log('  bubble webhook ->', b.statusCode, b.body);
+      const r = await postDumpToN8N(dumpPath, dump);
+      console.log('  n8n webhook (fallback direto) ->', r.statusCode, r.body);
     } catch (error) {
-      console.warn('  envio ao bubble falhou:', error.message);
+      console.warn('  envio do dump falhou:', error.message);
+    }
+    // No fallback direto o sync-api nao cuidou do Bubble: envia separado.
+    // No caminho via sync-api este bloco NAO roda (evita duplicar o Bubble).
+    if (BUBBLE_WEBHOOK_URL) {
+      try {
+        const b = await postDumpToBubble(dumpPath, dump);
+        console.log('  bubble webhook (fallback direto) ->', b.statusCode, b.body);
+      } catch (error) {
+        console.warn('  envio ao bubble falhou:', error.message);
+      }
     }
   }
 
