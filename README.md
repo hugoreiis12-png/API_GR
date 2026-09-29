@@ -15,7 +15,7 @@ fuzzing.js  ──►  af_full_dump.json  ──►  sync-api.js  ──►  web
 
 - **Node.js 20+** (usa `URL`, `fetch` no browser e módulo `http` nativo; Playwright >=1.50 recusa Node 18)
 - **Google Chrome** instalado em `C:\Program Files\Google\Chrome\Application\chrome.exe`
-- **n8n** rodando e acessível na rede (ex.: `http://192.168.0.231:5678`)
+- **n8n** rodando e acessível na rede (ex.: `http://192.168.0.160:5678`)
 - Acesso à VPN/rede que alcança `https://ecommerce.grsa.com.br`
 
 ---
@@ -49,17 +49,17 @@ Nenhuma variável é obrigatória — há defaults. Para sobrescrever, defina an
 
 | Variável            | Onde         | Default                                                        |
 | ------------------- | ------------ | ------------------------------------------------------------- |
-| `N8N_WEBHOOK_URL`   | `sync-api.js`| `http://192.168.0.231:5678/webhook-test/af-dump-trigger`      |
+| `N8N_WEBHOOK_URL`   | `sync-api.js`| `http://192.168.0.160:5678/webhook-test/af-dump-trigger`      |
 | `SYNC_PORT`         | `sync-api.js`| `3005`                                                        |
 | `SYNC_API_URL`      | `fuzzing.js` | `http://localhost:3005/dump-ready`                            |
 
 Exemplo (PowerShell):
 
 ```powershell
-$env:N8N_WEBHOOK_URL = "http://192.168.0.231:5678/webhook/af-dump-trigger"
+$env:N8N_WEBHOOK_URL = "http://192.168.0.160:5678/webhook/af-dump-trigger"
 ```
 
-> ⚠️ Use o **IP real** da máquina do n8n (ex.: `192.168.0.231`). Nunca use
+> ⚠️ Use o **IP real** da máquina do n8n (ex.: `192.168.0.160`). Nunca use
 > `0.0.0.0` como destino — é apenas o endereço de *bind* que o n8n exibe, não um
 > host acessível.
 
@@ -103,7 +103,7 @@ Saída esperada:
 ```
 sync-api listening on http://localhost:3005
 watched file: ...\af_full_dump.json
-n8n webhook: http://192.168.0.231:5678/webhook-test/af-dump-trigger
+n8n webhook: http://192.168.0.160:5678/webhook-test/af-dump-trigger
 ```
 
 O `sync-api` também **observa** a pasta: sempre que `af_full_dump.json` é

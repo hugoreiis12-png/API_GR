@@ -52,7 +52,7 @@ function filtrarPorJanela(rows) {
 // ---- filtro exato fornecido (nao-canceladas) + intervalo de data (server-side) ----
 const FILTER = [
   { name: CAMPO_DATA, value: [formatDataBR(JANELA_INICIO), formatDataBR(JANELA_FIM)], operator: "BETWEEN", isCustomFilter: true },
-  { name: "STATUS", value: ["N"], operator: "IN", isCustomFilter: true },
+  { name: "STATUS", value: ["N", "S"], operator: "IN", isCustomFilter: true },
   { name: "IDSITUATENDIMENTOAF", value: ["N"], operator: "IN", isCustomFilter: true },
   { name: "AFCANCELADA", value: ["N"], operator: "IN", isCustomFilter: true }
 ];
