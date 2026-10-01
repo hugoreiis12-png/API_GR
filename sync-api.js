@@ -13,7 +13,7 @@ const FILE_PATH = path.join(process.env.DUMP_DIR || __dirname, FILE_NAME);
 //  - n8n: exige o workflow Active. Host 192.168.0.160 (use o IP real do n8n).
 //  - Bubble: workflow do Bubble (version-test).
 // Cada URL pode ser sobrescrita pela env correspondente.
-const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || 'http://192.168.0.231:5678/webhook/af-dump-trigger'; 
+const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || 'http://192.168.0.160:5678/webhook/af-dump-trigger'; 
 const BUBBLE_WEBHOOK = process.env.BUBBLE_WEBHOOK_URL || 'https://comprover.bubbleapps.io/api/1.1/wf/chave_gr';
 
 // Gera um JWT (HMAC-SHA256) usando o JWT_SECRET da env. Claims basicos:
