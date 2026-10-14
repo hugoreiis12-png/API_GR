@@ -42,10 +42,16 @@ const BUBBLE_WEBHOOK_URL = process.env.BUBBLE_WEBHOOK_URL || 'https://comprover.
 const BASE = "https://ecommerce.grsa.com.br";
 const URL_LOGIN = 'https://ecommerce.grsa.com.br//#/product#Login';
 // Credenciais: aceita GRSA_* (compose/Portainer) com fallback para GR_* (legado/desktop).
-// Vazias no compose = cai nos defaults embutidos (apenas dev local).
-const EMAIL = process.env.GRSA_EMAIL || process.env.GR_EMAIL || 'william.silva@grupocampanha.com.br';
-const PASS = process.env.GRSA_PASS || process.env.GR_PASS || '1234567890';
-const GOC_SESSION = process.env.GRSA_GOC_SESSION || 'zgyinkpvxsymcsrgykrpbpojrcnmetap';
+// Sem defaults embutidos: GRSA_EMAIL e GRSA_PASS sao obrigatorios (ver checagem abaixo).
+const EMAIL = process.env.GRSA_EMAIL || process.env.GR_EMAIL || '';
+const PASS = process.env.GRSA_PASS || process.env.GR_PASS || '';
+const GOC_SESSION = process.env.GRSA_GOC_SESSION || '';
+const EXIT_LOGIN_FAILED = 3;
+const LOGIN_TIMEOUT_MS = 30000;
+if (!EMAIL || !PASS) {
+  console.error('ERRO: defina GRSA_EMAIL e GRSA_PASS (sem credenciais embutidas no codigo).');
+  process.exit(EXIT_LOGIN_FAILED);
+}
 // Dump: respeita DUMP_DIR (volume /app/data no container) igual ao sync-api.
 // Sem DUMP_DIR = raiz do projeto (dev local).
 const DUMP_DIR = process.env.DUMP_DIR || __dirname;
@@ -94,9 +100,8 @@ const { ini: DATE_INI, fim: DATE_FIM } = computeDateRange(RANGE_START, RANGE_DAY
 console.log(`  filtro de data (${DATE_FIELD}): ${DATE_INI} -> ${DATE_FIM} [op=${DATE_OPERATOR}, fmt=${DATE_FORMAT}]`);
 
 // ---- filtro: data (intervalo) + nao-canceladas ----
-// STATUS via env STATUS_VALUES (default "Y" conforme selecao Disponivel/Lido).
-// Ex.: STATUS_VALUES=N,S ou STATUS_VALUES=Y
-const STATUS_VALUES = (process.env.STATUS_VALUES || 'Y').split(',').map(s => s.trim()).filter(Boolean);
+// STATUS via env STATUS_VALUES. Default "N,S" = selecao Disponivel + Lido (capturado do browser).
+const STATUS_VALUES = (process.env.STATUS_VALUES || 'N,S').split(',').map(s => s.trim()).filter(Boolean);
 const FILTER = [
   { name: DATE_FIELD, value: [DATE_INI, DATE_FIM], operator: DATE_OPERATOR, isCustomFilter: true },
   { name: "STATUS", value: STATUS_VALUES, operator: "IN", isCustomFilter: true },
@@ -271,7 +276,7 @@ function postDumpToBubble(filePath, dump) {
     locale: 'pt-BR',
     viewport: { width: 1366, height: 768 }
   });
-  await context.addCookies([{ name: '__goc_session__', value: GOC_SESSION, url: BASE }]);
+  if (GOC_SESSION) await context.addCookies([{ name: '__goc_session__', value: GOC_SESSION, url: BASE }]);
   const page = await context.newPage();
 
   // ---- captura token/sessao ----
@@ -292,27 +297,49 @@ function postDumpToBubble(filePath, dump) {
 
   // ---------- LOGIN ----------
   console.log('=== LOGIN ===');
-  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 50000 });
-  await page.waitForTimeout(2500);
-  await page.goto(URL_LOGIN, { waitUntil: 'domcontentloaded', timeout: 50000 });
-  await page.waitForTimeout(3000);
+  // Aborta com diagnostico (URL, titulo, screenshot) em vez de seguir sem sessao.
+  async function failLogin(reason) {
+    console.error(`ERRO LOGIN: ${reason}`);
+    console.error('  url:', page.url(), '| titulo:', await page.title().catch(() => '?'));
+    const shot = path.join(DUMP_DIR, 'login-failed.png');
+    fs.mkdirSync(DUMP_DIR, { recursive: true });
+    await page.screenshot({ path: shot }).then(() => console.error('  screenshot:', shot)).catch(() => {});
+    await browser.close();
+    process.exit(EXIT_LOGIN_FAILED);
+  }
+  async function waitUntilTruthy(read, timeoutMs) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (read()) return true;
+      await page.waitForTimeout(250);
+    }
+    return false;
+  }
+
+  // 'commit' evita travar esperando domcontentloaded numa SPA; o formulario e esperado por seletor.
+  await page.goto(URL_LOGIN, { waitUntil: 'commit', timeout: LOGIN_TIMEOUT_MS })
+    .catch(e => failLogin(`site inacessivel a partir deste ambiente (${e.message.split('\n')[0]})`));
+  const passwordInput = page.locator('input[type=password]').first();
+  try {
+    await passwordInput.waitFor({ state: 'visible', timeout: LOGIN_TIMEOUT_MS });
+  } catch (e) {
+    await failLogin('formulario de login nao apareceu');
+  }
   await page.locator('input[type=email], input[name*=mail], input[placeholder*=mail i]').first().fill(EMAIL);
-  await page.locator('input[type=password]').first().fill(PASS);
-  await page.locator('input[type=password]').first().press('Enter');
-  await page.waitForTimeout(8000);
-  console.log('  URL p/ login:', page.url());
+  await passwordInput.fill(PASS);
+  await passwordInput.press('Enter');
+  if (!await waitUntilTruthy(() => otToken, LOGIN_TIMEOUT_MS)) {
+    await failLogin('login nao gerou oauth-token (credenciais invalidas, captcha/2FA ou seletores mudaram)');
+  }
 
   const cookies = await context.cookies();
   const goc = (cookies.find(c => c.name === '__goc_session__') || {}).value || '';
   const phps = (cookies.find(c => c.name === 'PHPSESSID') || {}).value || '';
-  console.log('  oauth-token:', otToken);
-  console.log('  user-id:', userId);
-  console.log('  PHPSESSID:', phps);
-  console.log('  __goc_session__:', goc);
+  console.log('  login ok | user-id:', userId, '| oauth-token: presente');
 
   // navegar para AutorizacaoFornecimento (garantir rota)
-  await page.goto('https://ecommerce.grsa.com.br//#/product#AutorizacaoFornecimento', { waitUntil: 'domcontentloaded', timeout: 50000 });
-  await page.waitForTimeout(7000);
+  await page.goto('https://ecommerce.grsa.com.br//#/product#AutorizacaoFornecimento', { waitUntil: 'commit', timeout: LOGIN_TIMEOUT_MS });
+  await page.waitForLoadState('networkidle', { timeout: LOGIN_TIMEOUT_MS }).catch(() => {});
   console.log('  URL AF:', page.url());
 
   // ---------- REUTILIZACAO: fetch via sessao do browser (igual origem, token) ----------
