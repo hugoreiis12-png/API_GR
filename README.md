@@ -74,7 +74,7 @@ A coleta pode ser disparada de duas formas:
 - **Google Chrome / Chromium**:
   - Windows: `C:\Program Files\Google\Chrome\Application\chrome.exe`.
   - Container: `chromium` do sistema (via `CHROME_PATH=/usr/bin/chromium`).
-- **n8n** acessível na rede (ex.: `http://192.168.0.231:5678`).
+- **n8n** acessível na rede (ex.: `http://192.168.0.160:5678`).
 - Acesso à rede/VPN que alcança `https://ecommerce.grsa.com.br`.
 
 ---
@@ -101,7 +101,7 @@ necessário para o envio assinado ao Bubble.
 
 | Variável            | Usada em            | Default                                                        |
 | ------------------- | ------------------- | ------------------------------------------------------------- |
-| `N8N_WEBHOOK_URL`   | `sync-api`/`fuzzing`| `http://192.168.0.231:5678/webhook/af-dump-trigger`           |
+| `N8N_WEBHOOK_URL`   | `sync-api`/`fuzzing`| `http://192.168.0.160:5678/webhook/af-dump-trigger`           |
 | `BUBBLE_WEBHOOK_URL`| `sync-api`/`fuzzing`| `https://comprover.bubbleapps.io/api/1.1/wf/chave_gr`         |
 | `JWT_SECRET`        | `sync-api`          | *(vazio — sem ele o Bubble vai sem JWT)*                       |
 | `JWT_EXPIRY_HOURS`  | `sync-api`          | `12`                                                          |
@@ -122,10 +122,10 @@ Exemplo (PowerShell):
 
 ```powershell
 $env:JWT_SECRET = "meu-segredo"
-$env:N8N_WEBHOOK_URL = "http://192.168.0.231:5678/webhook/af-dump-trigger"
+$env:N8N_WEBHOOK_URL = "http://192.168.0.160:5678/webhook/af-dump-trigger"
 ```
 
-> ⚠️ Use o **IP real** da máquina do n8n (ex.: `192.168.0.231`). Nunca use
+> ⚠️ Use o **IP real** da máquina do n8n (ex.: `192.168.0.160`). Nunca use
 > `0.0.0.0` como destino — é apenas o endereço de *bind* que o n8n exibe, não um
 > host acessível.
 
@@ -158,7 +158,7 @@ Saída esperada:
 ```
 sync-api listening on http://localhost:3005
 watched file: ...\af_full_dump.json
-n8n webhook: http://192.168.0.231:5678/webhook/af-dump-trigger
+n8n webhook: http://192.168.0.160:5678/webhook/af-dump-trigger
 bubble webhook: https://comprover.bubbleapps.io/api/1.1/wf/chave_gr
 ```
 
