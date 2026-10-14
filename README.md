@@ -45,10 +45,13 @@ Isso instala o `playwright` / `playwright-core` (controle do Chrome).
 
 ## 4. Configuração (variáveis de ambiente)
 
-Nenhuma variável é obrigatória — há defaults. Para sobrescrever, defina antes de rodar:
+**Obrigatórias:** `GRSA_EMAIL` e `GRSA_PASS` (credenciais do GRSA) — sem elas o
+`fuzzing.js` aborta. As demais têm defaults; para sobrescrever, defina antes de rodar:
 
 | Variável            | Onde         | Default                                                        |
 | ------------------- | ------------ | ------------------------------------------------------------- |
+| `GRSA_EMAIL` / `GRSA_PASS` | `fuzzing.js` | *(obrigatórias, sem default)*                          |
+| `GRSA_GOC_SESSION`  | `fuzzing.js` | *(vazio — opcional)*                                           |
 | `N8N_WEBHOOK_URL`   | `sync-api.js`| `http://192.168.0.160:5678/webhook-test/af-dump-trigger`      |
 | `SYNC_PORT`         | `sync-api.js`| `3005`                                                        |
 | `SYNC_API_URL`      | `fuzzing.js` | `http://localhost:3005/dump-ready`                            |

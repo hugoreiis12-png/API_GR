@@ -9,8 +9,14 @@ const path = require('path');
 const CHROME = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const BASE = "https://ecommerce.grsa.com.br";
 const URL_LOGIN = 'https://ecommerce.grsa.com.br//#/product#Login';
-const EMAIL = process.env.GRSA_EMAIL || 'william.silva@grupocampanha.com.br';
-const PASS = process.env.GRSA_PASS || '1234567890';
+// Credenciais so via env (Portainer/.env); sem defaults embutidos no codigo.
+const EMAIL = process.env.GRSA_EMAIL || '';
+const PASS = process.env.GRSA_PASS || '';
+const GOC_SESSION = process.env.GRSA_GOC_SESSION || '';
+if (!EMAIL || !PASS) {
+  console.error('ERRO: defina GRSA_EMAIL e GRSA_PASS no ambiente (stack do Portainer ou .env).');
+  process.exit(1);
+}
 const ITEMS_PER_PAGE = 40;
 const MAX_PAGES = 500;
 
@@ -126,7 +132,7 @@ function notifySyncApi(filePath) {
     locale: 'pt-BR',
     viewport: { width: 1366, height: 768 }
   });
-  await context.addCookies([{ name: '__goc_session__', value: process.env.GRSA_GOC_SESSION || 'zgyinkpvxsymcsrgykrpbpojrcnmetap', url: BASE }]);
+  if (GOC_SESSION) await context.addCookies([{ name: '__goc_session__', value: GOC_SESSION, url: BASE }]);
   const page = await context.newPage();
 
   // ---- captura token/sessao ----
@@ -167,10 +173,7 @@ function notifySyncApi(filePath) {
 
   const cookies = await context.cookies();
   const goc = (cookies.find(c => c.name === '__goc_session__') || {}).value || '';
-  console.log('  oauth-token:', otToken);
-  console.log('  user-id:', userId);
-  console.log('  PHPSESSID:', phps);
-  console.log('  __goc_session__:', goc);
+  console.log('  oauth-token:', otToken ? 'presente' : 'VAZIO', '| user-id:', userId, '| PHPSESSID:', phps ? 'presente' : 'VAZIO');
 
   // navegar para AutorizacaoFornecimento (garantir rota)
   await page.goto('https://ecommerce.grsa.com.br//#/product#AutorizacaoFornecimento', { waitUntil: 'domcontentloaded', timeout: 50000 });
