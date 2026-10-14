@@ -16,7 +16,7 @@ services:
     # variables" do stack.
     environment:
       # --- Segredos/credenciais: defina no Portainer. Vazio = usa o default. ---
-      # Credenciais GRSA: se vazias, o fuzzing.js cai nos defaults embutidos.
+      # Credenciais GRSA: GRSA_EMAIL e GRSA_PASS obrigatorias (sem elas a coleta aborta).
       - GRSA_EMAIL=${GRSA_EMAIL:-}
       - GRSA_PASS=${GRSA_PASS:-}
       - GRSA_GOC_SESSION=${GRSA_GOC_SESSION:-}
